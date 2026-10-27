@@ -682,6 +682,7 @@
         let currentPin = "";
         let activeDocId = 'doc1';
         let currentExplorerParent = 'root';
+        let isVaultUnlocked = false;
         const MODDER_PASSCODE = "09SAPORT05";
 
         // Master State Object (Exportable to JSON)
@@ -715,7 +716,7 @@
                 }
             ],
             fs: [
-                { id: 'f1', name: 'Секретная_Папка', type: 'folder', parent: 'root' },
+                { id: 'f1', name: 'Зашифрованная_Папка', type: 'folder', parent: 'root', protected: true },
                 { id: 'f2', name: 'Операция_Затмение', type: 'folder', parent: 'f1' }
             ]
         };
@@ -1072,7 +1073,15 @@
 
                 let icon = 'fa-file';
                 let color = 'text-gray-300';
-                if (item.type === 'folder') { icon = 'fa-folder-closed'; color = 'text-arg-green'; }
+                if (item.type === 'folder') {
+                    if (item.protected && !isVaultUnlocked) {
+                        icon = 'fa-folder-lock';
+                        color = 'text-arg-red';
+                    } else {
+                        icon = 'fa-folder-closed';
+                        color = 'text-arg-green';
+                    }
+                }
                 else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
                 else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
                 else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
@@ -1093,6 +1102,12 @@
         function openFsItem(item) {
             playSound('click');
             if (item.type === 'folder') {
+                if (item.protected && !isVaultUnlocked) {
+                    playSound('denied');
+                    alert("ДОСТУП ЗАБЛОКИРОВАН: Папка зашифрована. Введите PIN-код в 'Зашифрованном Сейфе' для разблокировки.");
+                    openWindow('windowVault');
+                    return;
+                }
                 currentExplorerParent = item.id;
                 openWindow('windowExplorer');
                 renderExplorerGrid();
@@ -1137,7 +1152,15 @@
 
                 let icon = 'fa-file';
                 let color = 'text-gray-300';
-                if (item.type === 'folder') { icon = 'fa-folder'; color = 'text-arg-green'; }
+                if (item.type === 'folder') {
+                    if (item.protected && !isVaultUnlocked) {
+                        icon = 'fa-folder-lock';
+                        color = 'text-arg-red';
+                    } else {
+                        icon = 'fa-folder';
+                        color = 'text-arg-green';
+                    }
+                }
                 else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
                 else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
                 else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
@@ -1298,9 +1321,11 @@
         function submitPin() {
             if (currentPin === state.vault.pin) {
                 playSound('granted');
+                isVaultUnlocked = true;
                 document.getElementById('vaultLockedState').classList.add('hidden');
                 document.getElementById('vaultUnlockedState').classList.remove('hidden');
                 document.getElementById('vaultUnlockedContent').innerHTML = state.vault.unlockedContent;
+                renderDesktopAndExplorer();
             } else {
                 playSound('denied');
                 const display = document.getElementById('pinDisplay');
@@ -1312,9 +1337,14 @@
         function resetVault() {
             playSound('click');
             currentPin = "";
+            isVaultUnlocked = false;
             updatePinDisplay();
             document.getElementById('vaultUnlockedState').classList.add('hidden');
             document.getElementById('vaultLockedState').classList.remove('hidden');
+            if (currentExplorerParent === 'f1') {
+                currentExplorerParent = 'root';
+            }
+            renderDesktopAndExplorer();
         }
 
         // =================================================================
