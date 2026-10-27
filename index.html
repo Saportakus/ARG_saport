@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>АРМ "ЗАРИЯ-84"</title>
+    <title>АРМ "ЗАРИЯ-84" - СИСТЕМА СПЕЦСВЯЗИ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -25,7 +25,8 @@
                             cyan: '#00e5ff',
                             red: '#ff2a3b',
                             yellow: '#ffc800',
-                            dim: '#436b53'
+                            dim: '#436b53',
+                            purple: '#b026ff'
                         }
                     },
                     fontFamily: {
@@ -154,6 +155,10 @@
                 <span class="flex items-center gap-1.5">
                     <span id="ledHdd" class="w-2 h-2 rounded-full bg-arg-cyan/50"></span>
                     <span class="text-[10px] text-gray-400">ДИСК</span>
+                </span>
+                <span id="ledUsb" class="hidden sm:flex items-center gap-1.5">
+                    <span id="ledUsbInd" class="w-2 h-2 rounded-full bg-gray-600"></span>
+                    <span class="text-[10px] text-gray-400">USB СЛОТ</span>
                 </span>
                 <span class="hidden sm:inline text-arg-green/80 font-bold ml-2">СПЕЦСВЯЗЬ МО РФ // БК-14МЛ</span>
             </div>
@@ -294,6 +299,9 @@
                     <button onclick="openWindow('windowVault'); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-red flex items-center gap-2">
                         <i class="fa-solid fa-vault text-arg-red"></i> <span>Зашифрованный Сейф</span>
                     </button>
+                    <button onclick="openUsbDrivePrompt(); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-cyan flex items-center gap-2">
+                        <i class="fa-solid fa-compact-disc text-arg-cyan"></i> <span>Вставить флеш-накопитель</span>
+                    </button>
                     <div class="pt-2 border-t border-arg-border">
                         <button onclick="lockSystem(); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-red/20 text-arg-red flex items-center gap-2">
                             <i class="fa-solid fa-lock"></i> <span>Заблокировать</span>
@@ -332,6 +340,14 @@
                             <i class="fa-solid fa-vault"></i>
                         </div>
                         <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-red tracking-wide">Сейф_Архива</span>
+                    </button>
+
+                    <!-- USB Flash Drive Desktop Slot Button -->
+                    <button onclick="openUsbDrivePrompt()" class="group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-cyan/10 border border-transparent hover:border-arg-cyan/30 transition text-center">
+                        <div id="usbIconSlot" class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-cyan/40 flex items-center justify-center text-arg-cyan text-2xl group-hover:scale-110 transition shadow-lg">
+                            <i class="fa-solid fa-usb"></i>
+                        </div>
+                        <span id="usbSlotLabel" class="mt-2 font-mono-code text-[11px] text-arg-cyan group-hover:underline tracking-wide">USB СЛОТ</span>
                     </button>
 
                     <!-- Dynamic Custom Files and Folders render here -->
@@ -457,7 +473,7 @@
 
                         <div id="vaultUnlockedState" class="hidden w-full h-full flex flex-col justify-between text-left">
                             <div class="p-2.5 bg-arg-green/10 border border-arg-green/40 rounded text-arg-green text-xs font-bold flex items-center gap-2">
-                                <i class="fa-solid fa-unlock-keyhole"></i> СЕЙФ РАССЕКРЕЧЕН
+                                <i class="fa-solid fa-unlock-keyhole"></i> СЕЙФ РАССЕКРЕЧЕН (ДОСТУП "ОМЕГА" РАЗРЕШЕН)
                             </div>
                             <div class="flex-1 my-3 overflow-y-auto text-xs text-gray-200 leading-relaxed" id="vaultUnlockedContent">
                                 <!-- Populated dynamically -->
@@ -468,11 +484,11 @@
                 </div>
 
                 <!-- APP 5: FILE EXPLORER WINDOW -->
-                <div id="windowExplorer" class="window-instance glass-window absolute top-12 left-12 sm:left-48 w-[90%] sm:w-[600px] h-[420px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-green/40">
+                <div id="windowExplorer" class="window-instance glass-window absolute top-12 left-12 sm:left-48 w-[90%] sm:w-[620px] h-[440px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-green/40">
                     <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
                         <div class="flex items-center gap-2 text-arg-green font-mono-code text-xs">
                             <i class="fa-solid fa-folder-open"></i>
-                            <span>ПРОВОДНИК ФАЙЛОВ</span>
+                            <span id="explorerWindowTitle">ПРОВОДНИК ФАЙЛОВ</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="minimizeWindow('windowExplorer')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
@@ -487,20 +503,42 @@
                             </button>
                             <div id="explorerBreadcrumb" class="text-gray-300 font-bold">Корень</div>
                         </div>
-                        <button onclick="promptCreateFolderInExplorer()" class="px-2 py-1 bg-arg-green/20 hover:bg-arg-green/30 text-arg-green rounded border border-arg-green/50 text-[11px] font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-folder-plus"></i> <span>+ Новая папка</span>
+                        <button onclick="promptCreateFileOrFolderInExplorer()" class="px-2 py-1 bg-arg-green/20 hover:bg-arg-green/30 text-arg-green rounded border border-arg-green/50 text-[11px] font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> <span>+ Добавить файл/папку</span>
                         </button>
                     </div>
-                    <div id="explorerGrid" class="flex-1 p-4 bg-black/60 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-4">
+                    <div id="explorerGrid" class="flex-1 p-4 bg-black/60 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <!-- Dynamic Folder & File contents render here -->
                     </div>
                 </div>
 
-                <!-- MEDIA VIEWER MODAL -->
-                <div id="mediaViewerModal" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md p-6 flex flex-col items-center justify-center">
+                <!-- USB INSERT MODAL PROMPT -->
+                <div id="usbPromptModal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md p-6 flex flex-col items-center justify-center font-mono-code">
+                    <div class="glass-panel max-w-sm w-full p-6 rounded-xl border border-arg-cyan relative text-center">
+                        <button onclick="closeUsbPrompt()" class="absolute top-3 right-3 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                        <div class="w-12 h-12 mx-auto rounded-full bg-arg-cyan/20 border border-arg-cyan flex items-center justify-center text-arg-cyan text-2xl mb-3">
+                            <i class="fa-solid fa-usb"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-arg-cyan mb-1">ПОДКЛЮЧЕНИЕ ФЛЕШ-ДИСКА</h3>
+                        <p class="text-xs text-gray-300 mb-4">ВВЕДИТЕ 3-Х ЗНАЧНЫЙ БУКВЕННЫЙ КОД НАКОПИТЕЛЯ (НАПР. JFF):</p>
+                        
+                        <input type="text" id="usbCodeInput" maxlength="3" placeholder="JFF" class="w-32 py-2 text-center bg-black border-2 border-arg-cyan rounded text-lg font-bold text-white tracking-widest uppercase focus:outline-none mb-4">
+                        
+                        <div class="flex gap-2">
+                            <button onclick="ejectUsbDrive()" id="btnEjectUsb" class="hidden flex-1 py-2 bg-arg-red/20 border border-arg-red text-arg-red rounded text-xs font-bold hover:bg-arg-red/30">ИЗВЛЕЧЬ</button>
+                            <button onclick="insertUsbDriveFromInput()" class="flex-1 py-2 bg-arg-cyan/20 border border-arg-cyan text-arg-cyan rounded text-xs font-bold hover:bg-arg-cyan/30">ПОДКЛЮЧИТЬ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MEDIA VIEWER MODAL (TEXT, IMAGE, VIDEO, AUDIO) -->
+                <div id="mediaViewerModal" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md p-6 flex flex-col items-center justify-center font-mono-code">
                     <div class="glass-window max-w-2xl w-full max-h-[85vh] p-4 rounded-xl border border-arg-cyan relative flex flex-col">
-                        <div class="flex justify-between items-center pb-2 mb-3 border-b border-arg-border font-mono-code">
-                            <h3 id="mediaTitle" class="text-sm font-bold text-arg-cyan">Медиафайл</h3>
+                        <div class="flex justify-between items-center pb-2 mb-3 border-b border-arg-border">
+                            <div class="flex items-center gap-2">
+                                <span id="mediaClearanceBadge" class="text-[10px] px-1.5 py-0.5 rounded font-bold"></span>
+                                <h3 id="mediaTitle" class="text-sm font-bold text-arg-cyan">Медиафайл</h3>
+                            </div>
                             <button onclick="closeMediaViewer()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
                         </div>
                         <div id="mediaContainer" class="flex-1 overflow-auto flex items-center justify-center bg-black/80 rounded border border-arg-border/50 p-2"></div>
@@ -511,7 +549,7 @@
         </div>
 
         <!-- ================================================================= -->
-        <!-- DEVELOPER / STORY MODDER SUITE MODAL (KEPT AS IS) -->
+        <!-- DEVELOPER / STORY MODDER SUITE MODAL -->
         <!-- ================================================================= -->
         <div id="modderSuiteModal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-lg p-4 sm:p-6 flex items-center justify-center">
             <div class="glass-window w-full max-w-4xl h-[90vh] rounded-2xl border-2 border-arg-yellow flex flex-col overflow-hidden shadow-2xl font-mono-code text-xs">
@@ -541,6 +579,9 @@
                     </button>
                     <button onclick="switchModderTab('tabFiles')" id="tabBtnFiles" class="modder-tab py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-1.5">
                         <i class="fa-solid fa-folder-tree"></i> Files & Folders
+                    </button>
+                    <button onclick="switchModderTab('tabUsb')" id="tabBtnUsb" class="modder-tab py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-usb"></i> USB Flash Drives
                     </button>
                     <button onclick="switchModderTab('tabVault')" id="tabBtnVault" class="modder-tab py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-1.5">
                         <i class="fa-solid fa-key"></i> Credentials & Vault
@@ -595,19 +636,28 @@
                     <div id="tabFiles" class="hidden space-y-4">
                         <div class="p-3 bg-arg-border/20 border border-arg-border rounded font-mono-code">
                             <h4 class="text-arg-yellow font-bold mb-2">Add New File or Folder</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
                                 <div>
                                     <label class="block text-gray-400 mb-1">Type:</label>
                                     <select id="modFileType" onchange="toggleFileModType()" class="w-full bg-black border border-arg-border p-2 rounded text-white">
                                         <option value="folder">Folder</option>
+                                        <option value="text">Text Document</option>
                                         <option value="image">Image File</option>
                                         <option value="video">Video File</option>
-                                        <option value="text">Text Document</option>
+                                        <option value="audio">Audio Track</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-gray-400 mb-1">Name:</label>
                                     <input type="text" id="modFileName" placeholder="e.g. Secret_Plan" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Clearance Level:</label>
+                                    <select id="modFileClearance" class="w-full bg-black border border-arg-border p-2 rounded text-white font-bold">
+                                        <option value="NONE" class="text-gray-300">БЕЗ ОГРАНИЧЕНИЙ</option>
+                                        <option value="ОМЕГА" class="text-arg-yellow">ОМЕГА (Требуется Сейф)</option>
+                                        <option value="КБЛТ-46" class="text-arg-red">КБЛТ-46 (Запрещено)</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-gray-400 mb-1">Parent Location:</label>
@@ -619,7 +669,7 @@
 
                             <div id="modFileContentGroup" class="hidden mb-3">
                                 <label class="block text-gray-400 mb-1">Content URL / Text Data:</label>
-                                <input type="text" id="modFileSrc" placeholder="https://... or Image Data URL or text content" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                <input type="text" id="modFileSrc" placeholder="https://... or audio/image link or text data" class="w-full bg-black border border-arg-border p-2 rounded text-white">
                             </div>
 
                             <button onclick="addNewCustomFileOrFolder()" class="w-full py-2 bg-arg-green/20 border border-arg-green text-arg-green font-bold rounded hover:bg-arg-green/30">
@@ -628,14 +678,43 @@
                         </div>
 
                         <div>
-                            <h4 class="text-gray-300 font-bold mb-2">Existing Files & Folders Directory:</h4>
+                            <h4 class="text-gray-300 font-bold mb-2">Existing System Files Directory:</h4>
                             <div id="modFileList" class="space-y-1.5 max-h-52 overflow-y-auto border border-arg-border p-2 bg-black/60 rounded">
                                 <!-- Rendered dynamically -->
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB 3: CREDENTIALS & VAULT SECRET -->
+                    <!-- TAB 3: USB FLASH DRIVES MANAGER -->
+                    <div id="tabUsb" class="hidden space-y-4">
+                        <div class="p-3 bg-arg-border/20 border border-arg-border rounded space-y-3">
+                            <h4 class="text-arg-cyan font-bold">Manage Flash Drives</h4>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-gray-400 mb-1">3-Letter Code (e.g. JFF):</label>
+                                    <input type="text" id="modUsbCode" maxlength="3" placeholder="JFF" class="w-full uppercase font-bold bg-black border border-arg-cyan p-2 rounded text-arg-cyan">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-gray-400 mb-1">Drive Label / Name:</label>
+                                    <input type="text" id="modUsbLabel" placeholder="Накопитель JFF" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                </div>
+                                <div class="self-end">
+                                    <button onclick="addOrUpdateFlashDriveMod()" class="px-4 py-2 bg-arg-cyan/20 border border-arg-cyan text-arg-cyan font-bold rounded hover:bg-arg-cyan/30">
+                                        + Create / Save Flash Drive
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-gray-300 font-bold mb-2">Registered Flash Drives & Contents:</h4>
+                            <div id="modUsbList" class="space-y-3 max-h-64 overflow-y-auto border border-arg-border p-3 bg-black/60 rounded">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: CREDENTIALS & VAULT SECRET -->
                     <div id="tabVault" class="hidden space-y-4">
                         <div class="p-4 bg-arg-border/20 border border-arg-border rounded space-y-3">
                             <h4 class="text-arg-yellow font-bold">Login Credentials Configuration</h4>
@@ -682,6 +761,7 @@
         let currentPin = "";
         let activeDocId = 'doc1';
         let currentExplorerParent = 'root';
+        let activeInsertedUsbCode = null; // e.g. 'JFF'
         let isVaultUnlocked = false;
         const MODDER_PASSCODE = "09SAPORT05";
 
@@ -712,13 +792,30 @@
                     id: 'doc3',
                     title: '03: Шифровка агента В. И.',
                     classification: 'ОГРАНИЧЕННЫЙ ДОСТУП',
-                    body: `<h3 class="text-arg-yellow font-bold text-sm mb-2">ШИФРОГРАММА В. И.</h3><p class="mb-1">Идентификатор агента: <span class="text-arg-green font-bold">VladIvanAFRF</span></p><p>Все временные данные сохранены в локальном проводнике.</p>`
+                    body: `<h3 class="text-arg-yellow font-bold text-sm mb-2">ШИФРОГРАММА В. И.</h3><p class="mb-1">Идентификатор агента: <span class="text-arg-green font-bold">VladIvanAFRF</span></p><p>Подключите внешние флеш-накопители через трехзначный код доступа (например, <span class="text-arg-cyan font-bold">JFF</span>).</p>`
                 }
             ],
+            // File clearance options: 'NONE' (or undefined), 'ОМЕГА', 'КБЛТ-46'
             fs: [
-                { id: 'f1', name: 'Зашифрованная_Папка', type: 'folder', parent: 'root', protected: true },
-                { id: 'f2', name: 'Операция_Затмение', type: 'folder', parent: 'f1' }
-            ]
+                { id: 'f1', name: 'Особый_Отдел', type: 'folder', parent: 'root', clearance: 'ОМЕГА' },
+                { id: 'f2', name: 'Проект_Черное_Озеро', type: 'folder', parent: 'f1', clearance: 'NONE' },
+                { id: 'f3', name: 'Секретный_Архив_КБ', type: 'folder', parent: 'root', clearance: 'КБЛТ-46' },
+                { id: 'file_demo_omega', name: 'Отчет_ОМЕГА.txt', type: 'text', parent: 'root', clearance: 'ОМЕГА', src: 'Секретная директива высшего командования. Доступ открыт только после разблокировки сейфа.' },
+                { id: 'file_demo_kblt', name: 'Приказ_КБЛТ46.txt', type: 'text', parent: 'root', clearance: 'КБЛТ-46', src: 'ЗАБЛОКИРОВАНО' }
+            ],
+            // Flash Drives Store
+            flashDrives: {
+                "JFF": {
+                    code: "JFF",
+                    label: "Флеш-карта JFF (Разведка)",
+                    files: [
+                        { id: 'jff_1', name: 'Расшифровка_JFF.txt', type: 'text', clearance: 'NONE', src: '=== РАСШИФРОВАННЫЕ ДАННЫЕ НАКОПИТЕЛЯ JFF ===\nОбъект "ЗАРЯ-84" переведен на особый режим. Все файлы с грифом КБЛТ-46 строго заблокированы.' },
+                        { id: 'jff_2', name: 'Снимки_JFF.png', type: 'image', clearance: 'NONE', src: 'https://placehold.co/600x400/081f14/00ff66?text=JFF+RECON+PHOTO' },
+                        { id: 'jff_3', name: 'Архив_Записи.mp4', type: 'video', clearance: 'NONE', src: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+                        { id: 'jff_4', name: 'Аудио_Перехват.mp3', type: 'audio', clearance: 'ОМЕГА', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }
+                    ]
+                }
+            }
         };
 
         function getAudioContext() {
@@ -766,6 +863,13 @@
                     gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                     osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'usb_connect') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.setValueAtTime(600, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
                 }
             } catch (e) {}
         }
@@ -1056,76 +1160,162 @@
         }
 
         // =================================================================
-        // FOLDER & FILE EXPLORER SYSTEM
+        // CLEARANCE & FILE SYSTEM ENGINE
         // =================================================================
+        function checkClearanceAccess(item) {
+            const level = item.clearance || 'NONE';
+
+            if (level === 'КБЛТ-46') {
+                playSound('denied');
+                alert("ОТКАЗ В ДОСТУПЕ [КБЛТ-46]: Документ заблокирован военной цензурой высшего уровня. Открытие категорически запрещено.");
+                return false;
+            }
+            
+            if (level === 'ОМЕГА') {
+                if (!isVaultUnlocked) {
+                    playSound('denied');
+                    alert("ОТКАЗ В ДОСТУПЕ [ГРИФ ОМЕГА]: Объект заблокирован. Для доступа необходимо сначала ввести PIN-код в 'Зашифрованном Сейфе'.");
+                    openWindow('windowVault');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         function renderDesktopAndExplorer() {
+            // Update USB Hardware LED
+            const ledUsbInd = document.getElementById('ledUsbInd');
+            const slotLabel = document.getElementById('usbSlotLabel');
+            const usbIconSlot = document.getElementById('usbIconSlot');
+            if (activeInsertedUsbCode) {
+                ledUsbInd.className = "w-2 h-2 rounded-full bg-arg-cyan animate-pulse";
+                slotLabel.innerText = `USB: ${activeInsertedUsbCode}`;
+                usbIconSlot.className = "w-12 h-12 rounded-xl bg-arg-cyan/20 border-2 border-arg-cyan flex items-center justify-center text-arg-cyan text-2xl group-hover:scale-110 transition shadow-lg glow-green";
+            } else {
+                ledUsbInd.className = "w-2 h-2 rounded-full bg-gray-600";
+                slotLabel.innerText = "USB СЛОТ";
+                usbIconSlot.className = "w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-cyan/40 flex items-center justify-center text-arg-cyan text-2xl group-hover:scale-110 transition shadow-lg";
+            }
+
             // Render Desktop Dynamic Items
             const deskContainer = document.getElementById('desktopIconContainer');
-            // Remove existing dynamic items
             document.querySelectorAll('.dynamic-desk-item').forEach(e => e.remove());
 
-            const rootItems = state.fs.filter(item => item.parent === 'root');
+            let rootItems = state.fs.filter(item => item.parent === 'root');
+
+            // If a USB Drive is currently inserted, render its shortcut icon on the desktop
+            if (activeInsertedUsbCode && state.flashDrives[activeInsertedUsbCode]) {
+                const driveData = state.flashDrives[activeInsertedUsbCode];
+                const usbDeskBtn = document.createElement('button');
+                usbDeskBtn.className = "dynamic-desk-item group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-cyan/20 border border-arg-cyan/50 bg-arg-cyan/10 transition text-center animate-pulse";
+                usbDeskBtn.ondblclick = () => {
+                    currentExplorerParent = `usb_${activeInsertedUsbCode}`;
+                    openWindow('windowExplorer');
+                    renderExplorerGrid();
+                };
+                usbDeskBtn.onclick = () => playSound('click');
+                usbDeskBtn.innerHTML = `
+                    <div class="w-12 h-12 rounded-xl bg-black border border-arg-cyan flex items-center justify-center text-arg-cyan text-2xl group-hover:scale-110 transition shadow-lg">
+                        <i class="fa-solid fa-compact-disc"></i>
+                    </div>
+                    <span class="mt-2 font-mono-code text-[11px] text-arg-cyan font-bold tracking-wide truncate w-24">[${driveData.code}]</span>
+                `;
+                deskContainer.appendChild(usbDeskBtn);
+            }
+
             rootItems.forEach(item => {
                 const btn = document.createElement('button');
                 btn.className = "dynamic-desk-item group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center";
                 btn.ondblclick = () => openFsItem(item);
                 btn.onclick = () => playSound('click');
 
-                let icon = 'fa-file';
-                let color = 'text-gray-300';
-                if (item.type === 'folder') {
-                    if (item.protected && !isVaultUnlocked) {
-                        icon = 'fa-folder-lock';
-                        color = 'text-arg-red';
-                    } else {
-                        icon = 'fa-folder-closed';
-                        color = 'text-arg-green';
-                    }
-                }
-                else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
-                else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
-                else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
+                let { icon, color, badge } = getFileIconAndBadge(item);
 
                 btn.innerHTML = `
-                    <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-border flex items-center justify-center ${color} text-2xl group-hover:scale-110 transition shadow-lg">
+                    <div class="relative w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-border flex items-center justify-center ${color} text-2xl group-hover:scale-110 transition shadow-lg">
                         <i class="fa-solid ${icon}"></i>
+                        ${badge ? `<span class="absolute -top-1 -right-1 text-[8px] px-1 py-0.2 rounded font-bold ${badge.bg} ${badge.text}">${badge.label}</span>` : ''}
                     </div>
                     <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-green tracking-wide truncate w-24">${item.name}</span>
                 `;
                 deskContainer.appendChild(btn);
             });
 
-            // Render Current Explorer Window Content
             renderExplorerGrid();
+        }
+
+        function getFileIconAndBadge(item) {
+            let icon = 'fa-file';
+            let color = 'text-gray-300';
+            let badge = null;
+
+            const clearance = item.clearance || 'NONE';
+
+            if (clearance === 'КБЛТ-46') {
+                badge = { label: 'КБЛТ', bg: 'bg-arg-red', text: 'text-white' };
+            } else if (clearance === 'ОМЕГА') {
+                badge = { label: 'ОМЕГА', bg: 'bg-arg-yellow', text: 'text-black' };
+            }
+
+            if (item.type === 'folder') {
+                if (clearance === 'КБЛТ-46') { icon = 'fa-folder-lock'; color = 'text-arg-red'; }
+                else if (clearance === 'ОМЕГА' && !isVaultUnlocked) { icon = 'fa-folder-lock'; color = 'text-arg-yellow'; }
+                else { icon = 'fa-folder-closed'; color = 'text-arg-green'; }
+            }
+            else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
+            else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
+            else if (item.type === 'audio') { icon = 'fa-file-audio'; color = 'text-arg-purple'; }
+            else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
+
+            return { icon, color, badge };
         }
 
         function openFsItem(item) {
             playSound('click');
+            if (!checkClearanceAccess(item)) return;
+
             if (item.type === 'folder') {
-                if (item.protected && !isVaultUnlocked) {
-                    playSound('denied');
-                    alert("ДОСТУП ЗАБЛОКИРОВАН: Папка зашифрована. Введите PIN-код в 'Зашифрованном Сейфе' для разблокировки.");
-                    openWindow('windowVault');
-                    return;
-                }
                 currentExplorerParent = item.id;
                 openWindow('windowExplorer');
                 renderExplorerGrid();
-            } else if (item.type === 'image') {
-                openMediaViewer('image', item.name, item.src || 'https://placehold.co/600x400/0a1f14/00ff66?text=REDACTED+IMAGE');
-            } else if (item.type === 'video') {
-                openMediaViewer('video', item.name, item.src || '');
-            } else if (item.type === 'text') {
-                openMediaViewer('text', item.name, item.src || 'Нет содержимого.');
+            } else {
+                openMediaViewer(item.type, item.name, item.src || '', item.clearance);
             }
         }
 
         function renderExplorerGrid() {
             const grid = document.getElementById('explorerGrid');
             const breadcrumb = document.getElementById('explorerBreadcrumb');
+            const windowTitle = document.getElementById('explorerWindowTitle');
             grid.innerHTML = '';
 
-            // Update Breadcrumb
+            // Handle USB Drive Special Directory Navigation
+            if (currentExplorerParent.startsWith('usb_')) {
+                const usbCode = currentExplorerParent.replace('usb_', '');
+                const drive = state.flashDrives[usbCode];
+                if (!drive) {
+                    currentExplorerParent = 'root';
+                    renderExplorerGrid();
+                    return;
+                }
+                breadcrumb.innerText = `USB (${drive.code}) / ${drive.label}`;
+                windowTitle.innerText = `НАКОПИТЕЛЬ USB [${drive.code}]`;
+
+                if (drive.files.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full text-center text-arg-dim font-mono-code text-xs py-10">[Флеш-диск пуст]</div>`;
+                    return;
+                }
+
+                drive.files.forEach(item => {
+                    renderExplorerCard(grid, item);
+                });
+                return;
+            }
+
+            windowTitle.innerText = "ПРОВОДНИК ФАЙЛОВ";
+
+            // Normal Folder Path Navigation
             let path = [];
             let curr = currentExplorerParent;
             while (curr !== 'root') {
@@ -1145,36 +1335,33 @@
             }
 
             items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = "group cursor-pointer p-3 bg-black/60 border border-arg-border hover:border-arg-green rounded-lg flex flex-col items-center justify-center transition";
-                card.ondblclick = () => openFsItem(item);
-                card.onclick = () => playSound('click');
-
-                let icon = 'fa-file';
-                let color = 'text-gray-300';
-                if (item.type === 'folder') {
-                    if (item.protected && !isVaultUnlocked) {
-                        icon = 'fa-folder-lock';
-                        color = 'text-arg-red';
-                    } else {
-                        icon = 'fa-folder';
-                        color = 'text-arg-green';
-                    }
-                }
-                else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
-                else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
-                else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
-
-                card.innerHTML = `
-                    <div class="text-3xl ${color} mb-2 group-hover:scale-110 transition"><i class="fa-solid ${icon}"></i></div>
-                    <div class="font-mono-code text-xs text-gray-200 truncate w-full text-center">${item.name}</div>
-                `;
-                grid.appendChild(card);
+                renderExplorerCard(grid, item);
             });
+        }
+
+        function renderExplorerCard(container, item) {
+            const card = document.createElement('div');
+            card.className = "group cursor-pointer p-3 bg-black/60 border border-arg-border hover:border-arg-green rounded-lg flex flex-col items-center justify-center transition relative overflow-hidden";
+            card.ondblclick = () => openFsItem(item);
+            card.onclick = () => playSound('click');
+
+            let { icon, color, badge } = getFileIconAndBadge(item);
+
+            card.innerHTML = `
+                ${badge ? `<div class="absolute top-1 right-1 text-[9px] font-mono-code px-1 py-0.2 rounded font-bold ${badge.bg} ${badge.text}">${badge.label}</div>` : ''}
+                <div class="text-3xl ${color} mb-2 group-hover:scale-110 transition"><i class="fa-solid ${icon}"></i></div>
+                <div class="font-mono-code text-xs text-gray-200 truncate w-full text-center">${item.name}</div>
+            `;
+            container.appendChild(card);
         }
 
         function navigateExplorerUp() {
             playSound('click');
+            if (currentExplorerParent.startsWith('usb_')) {
+                currentExplorerParent = 'root';
+                renderExplorerGrid();
+                return;
+            }
             if (currentExplorerParent === 'root') return;
             const currentFolder = state.fs.find(f => f.id === currentExplorerParent);
             if (currentFolder) {
@@ -1183,32 +1370,130 @@
             }
         }
 
-        function promptCreateFolderInExplorer() {
+        function promptCreateFileOrFolderInExplorer() {
             playSound('click');
-            const name = prompt("Введите имя новой папки:", "Новая_папка");
-            if (name && name.trim()) {
-                const newFolder = {
-                    id: 'f_' + Date.now(),
-                    name: name.trim().replace(/\s+/g, '_'),
-                    type: 'folder',
-                    parent: currentExplorerParent
-                };
-                state.fs.push(newFolder);
-                renderDesktopAndExplorer();
+            if (currentExplorerParent.startsWith('usb_')) {
+                alert("НАКОПИТЕЛЬ ЗАЩИЩЕН ОТ ЗАПИСИ: Используйте Modder Suite для изменения файлов USB.");
+                return;
             }
+
+            const name = prompt("Введите имя нового файла или папки:", "Новый_объект");
+            if (!name || !name.trim()) return;
+
+            const typeChoice = prompt("Укажите тип:\n1 - Папка\n2 - Текстовый файл (.txt)\n3 - Изображение (.png/.jpg)\n4 - Видео (.mp4)\n5 - Аудио (.mp3)", "1");
+            let type = 'folder';
+            if (typeChoice === '2') type = 'text';
+            else if (typeChoice === '3') type = 'image';
+            else if (typeChoice === '4') type = 'video';
+            else if (typeChoice === '5') type = 'audio';
+
+            const clearanceChoice = prompt("Укажите уровень допуска:\n1 - БЕЗ ОГРАНИЧЕНИЙ (NONE)\n2 - ОМЕГА (Требуется Сейф)\n3 - КБЛТ-46 (Категорический запрет)", "1");
+            let clearance = 'NONE';
+            if (clearanceChoice === '2') clearance = 'ОМЕГА';
+            else if (clearanceChoice === '3') clearance = 'КБЛТ-46';
+
+            let src = '';
+            if (type !== 'folder') {
+                src = prompt("Введите содержимое (текст или URL ссылку на файл):", type === 'text' ? "Текст записи..." : "https://...");
+            }
+
+            const newItem = {
+                id: 'item_' + Date.now(),
+                name: name.trim().replace(/\s+/g, '_'),
+                type: type,
+                parent: currentExplorerParent,
+                clearance: clearance,
+                src: src || ''
+            };
+
+            state.fs.push(newItem);
+            renderDesktopAndExplorer();
         }
 
         // =================================================================
-        // MEDIA VIEWER
+        // USB FLASH DRIVE ENGINE
         // =================================================================
-        function openMediaViewer(type, title, src) {
+        function openUsbDrivePrompt() {
+            playSound('click');
+            const modal = document.getElementById('usbPromptModal');
+            const input = document.getElementById('usbCodeInput');
+            const btnEject = document.getElementById('btnEjectUsb');
+
+            input.value = activeInsertedUsbCode || "";
+            if (activeInsertedUsbCode) {
+                btnEject.classList.remove('hidden');
+            } else {
+                btnEject.classList.add('hidden');
+            }
+            modal.classList.remove('hidden');
+            input.focus();
+        }
+
+        function closeUsbPrompt() {
+            playSound('click');
+            document.getElementById('usbPromptModal').classList.add('hidden');
+        }
+
+        function insertUsbDriveFromInput() {
+            const input = document.getElementById('usbCodeInput');
+            const code = input.value.trim().toUpperCase();
+
+            if (!code || code.length !== 3) {
+                playSound('denied');
+                alert("ОШИБКА: Код флеш-диска должен состоять из 3 букв (например JFF).");
+                return;
+            }
+
+            if (!state.flashDrives[code]) {
+                playSound('denied');
+                alert(`ОШИБКА USB: Флеш-накопитель с кодом "${code}" не найден или поврежден.`);
+                return;
+            }
+
+            playSound('usb_connect');
+            activeInsertedUsbCode = code;
+            closeUsbPrompt();
+            renderDesktopAndExplorer();
+
+            // Auto Open Explorer to inserted drive
+            currentExplorerParent = `usb_${code}`;
+            openWindow('windowExplorer');
+            renderExplorerGrid();
+        }
+
+        function ejectUsbDrive() {
+            playSound('click');
+            activeInsertedUsbCode = null;
+            if (currentExplorerParent.startsWith('usb_')) {
+                currentExplorerParent = 'root';
+            }
+            closeUsbPrompt();
+            renderDesktopAndExplorer();
+        }
+
+        // =================================================================
+        // MEDIA VIEWER (TEXT, IMAGE, VIDEO, AUDIO)
+        // =================================================================
+        function openMediaViewer(type, title, src, clearance = 'NONE') {
             playSound('click');
             const modal = document.getElementById('mediaViewerModal');
             document.getElementById('mediaTitle').innerText = title;
             const container = document.getElementById('mediaContainer');
+            const badge = document.getElementById('mediaClearanceBadge');
+
+            if (clearance === 'ОМЕГА') {
+                badge.className = "text-[10px] px-1.5 py-0.5 rounded font-bold bg-arg-yellow text-black";
+                badge.innerText = "ГРИФ ОМЕГА";
+            } else if (clearance === 'КБЛТ-46') {
+                badge.className = "text-[10px] px-1.5 py-0.5 rounded font-bold bg-arg-red text-white";
+                badge.innerText = "ГРИФ КБЛТ-46";
+            } else {
+                badge.className = "text-[10px] px-1.5 py-0.5 rounded font-bold bg-arg-green/20 text-arg-green border border-arg-green/40";
+                badge.innerText = "ДОСТУП РАЗРЕШЕН";
+            }
 
             if (type === 'image') {
-                container.innerHTML = `<img src="${src}" class="max-h-[70vh] rounded border border-arg-border object-contain">`;
+                container.innerHTML = `<img src="${src || 'https://placehold.co/600x400/0a1f14/00ff66?text=NO+IMAGE+DATA'}" class="max-h-[70vh] rounded border border-arg-border object-contain" onerror="this.src='https://placehold.co/600x400/0a1f14/ff2a3b?text=IMAGE+LOAD+ERROR'">`;
             } else if (type === 'video') {
                 if (src.includes('youtube.com') || src.includes('youtu.be')) {
                     const embedUrl = src.replace('watch?v=', 'embed/');
@@ -1216,8 +1501,18 @@
                 } else {
                     container.innerHTML = `<video src="${src}" controls class="max-h-[70vh] w-full rounded border border-arg-border"></video>`;
                 }
+            } else if (type === 'audio') {
+                container.innerHTML = `
+                    <div class="p-6 bg-black/90 rounded-xl border border-arg-purple flex flex-col items-center justify-center gap-4 w-full max-w-md">
+                        <div class="w-16 h-16 rounded-full bg-arg-purple/20 border border-arg-purple flex items-center justify-center text-arg-purple text-3xl animate-pulse">
+                            <i class="fa-solid fa-music"></i>
+                        </div>
+                        <div class="text-arg-purple font-bold text-sm tracking-wider">${title}</div>
+                        <audio src="${src}" controls class="w-full mt-2"></audio>
+                    </div>
+                `;
             } else {
-                container.innerHTML = `<pre class="font-mono-code text-xs text-arg-green leading-relaxed p-4 w-full whitespace-pre-wrap">${src}</pre>`;
+                container.innerHTML = `<pre class="font-mono-code text-xs text-arg-green leading-relaxed p-4 w-full whitespace-pre-wrap">${src || 'Нет содержимого.'}</pre>`;
             }
             modal.classList.remove('hidden');
         }
@@ -1257,14 +1552,21 @@
             if (lower === 'помощь' || lower === 'help') {
                 printTerm(`Команды консоли:
   <span class="text-arg-green">файлы</span> / <span class="text-arg-green">ls</span>        - Список файлов системы
-  <span class="text-arg-green">читать &lt;файл&gt;</span> / <span class="text-arg-green">cat</span> - Просмотр документа
-  <span class="text-arg-green">расшифровать</span>      - Запуск алгоритма дешифровки
+  <span class="text-arg-green">usb &lt;код&gt;</span>        - Подключить флеш-накопитель (например: usb JFF)
+  <span class="text-arg-green">расшифровать</span>      - Запуск алгоритма дешифровки сейфа
   <span class="text-arg-green">очистить</span> / <span class="text-arg-green">clear</span>    - Очистить консоль`);
+            } else if (lower.startsWith('usb ')) {
+                const code = cmd.split(' ')[1]?.toUpperCase();
+                if (code && state.flashDrives[code]) {
+                    activeInsertedUsbCode = code;
+                    renderDesktopAndExplorer();
+                    printTerm(`[USB ПОДКЛЮЧЕН] Накопитель ${code} успешно смонтирован в системе.`, "text-arg-green");
+                } else {
+                    printTerm(`[ОШИБКА USB] Накопитель '${code}' не найден.`, "text-arg-red");
+                }
             } else if (lower === 'файлы' || lower === 'ls' || lower === 'files') {
-                const names = state.fs.map(i => i.name).join('   ');
-                printTerm(names || 'system_audit.log   operation_zarya.txt');
-            } else if (lower.startsWith('читать ') || lower.startsWith('cat ')) {
-                printTerm(`[ЧТЕНИЕ ЛОГА] PIN-код доступа к сейфу хранится в зашифрованной памяти.`);
+                const names = state.fs.map(i => `${i.name} [${i.clearance || 'NONE'}]`).join('   ');
+                printTerm(names || 'system_audit.log');
             } else if (lower === 'расшифровать' || lower === 'decode') {
                 printTerm(`[РАСШИФРОВКА УСПЕШНА] PIN сейфа: <span class="text-arg-yellow font-bold">${state.vault.pin}</span>`, "text-arg-yellow");
             } else if (lower === 'очистить' || lower === 'clear') {
@@ -1341,9 +1643,6 @@
             updatePinDisplay();
             document.getElementById('vaultUnlockedState').classList.add('hidden');
             document.getElementById('vaultLockedState').classList.remove('hidden');
-            if (currentExplorerParent === 'f1') {
-                currentExplorerParent = 'root';
-            }
             renderDesktopAndExplorer();
         }
 
@@ -1382,12 +1681,13 @@
 
             document.getElementById('tabNotebook').classList.add('hidden');
             document.getElementById('tabFiles').classList.add('hidden');
+            document.getElementById('tabUsb').classList.add('hidden');
             document.getElementById('tabVault').classList.add('hidden');
             document.getElementById(tabId).classList.remove('hidden');
         }
 
         function populateModderSelects() {
-            // Populate Notebook Select Dropdown
+            // Notebook Select Dropdown
             const select = document.getElementById('modNoteSelect');
             select.innerHTML = '';
             state.notebookEntries.forEach((entry, idx) => {
@@ -1398,21 +1698,22 @@
             });
             if (state.notebookEntries.length > 0) loadNotebookEntryToEdit();
 
-            // Populate Parent Folder Select Dropdown
+            // Parent Folder Select Dropdown
             const parentSelect = document.getElementById('modFileParent');
             parentSelect.innerHTML = `<option value="root">Desktop (Root)</option>`;
             const folders = state.fs.filter(f => f.type === 'folder');
             folders.forEach(f => {
                 const opt = document.createElement('option');
                 opt.value = f.id;
-                opt.innerText = `[Folder] ${f.name}`;
+                opt.innerText = `[Folder] ${f.name} (Clearance: ${f.clearance || 'NONE'})`;
                 parentSelect.appendChild(opt);
             });
 
-            // Populate Modder File Directory List
+            // Modder File Directory & Flash Drives List
             renderModFileList();
+            renderModUsbList();
 
-            // Populate Vault/Credentials Inputs
+            // Vault/Credentials Inputs
             document.getElementById('modConfigUser').value = state.credentials.username;
             document.getElementById('modConfigPass').value = state.credentials.password;
             document.getElementById('modConfigVaultPin').value = state.vault.pin;
@@ -1479,6 +1780,7 @@
             playSound('click');
             const type = document.getElementById('modFileType').value;
             const name = document.getElementById('modFileName').value.trim().replace(/\s+/g, '_') || 'Без_имени';
+            const clearance = document.getElementById('modFileClearance').value;
             const parent = document.getElementById('modFileParent').value;
             const src = document.getElementById('modFileSrc').value;
 
@@ -1486,6 +1788,7 @@
                 id: 'item_' + Date.now(),
                 name: name,
                 type: type,
+                clearance: clearance,
                 parent: parent,
                 src: src
             };
@@ -1509,7 +1812,8 @@
                 row.innerHTML = `
                     <div class="flex items-center gap-2">
                         <span class="text-arg-yellow font-bold">[${item.type.toUpperCase()}]</span>
-                        <span class="text-white">${item.name}</span>
+                        <span class="text-white font-bold">${item.name}</span>
+                        <span class="text-[10px] px-1 bg-arg-border/50 rounded text-arg-cyan">G: ${item.clearance || 'NONE'}</span>
                         <span class="text-[10px] text-arg-dim">(parent: ${item.parent})</span>
                     </div>
                     <button onclick="deleteFsItem('${item.id}')" class="text-arg-red hover:text-white px-2"><i class="fa-solid fa-trash"></i></button>
@@ -1523,6 +1827,106 @@
             state.fs = state.fs.filter(i => i.id !== id && i.parent !== id);
             renderDesktopAndExplorer();
             populateModderSelects();
+        }
+
+        // FLASH DRIVES MODDER LOGIC
+        function addOrUpdateFlashDriveMod() {
+            playSound('click');
+            const code = document.getElementById('modUsbCode').value.trim().toUpperCase();
+            const label = document.getElementById('modUsbLabel').value.trim() || `Накопитель ${code}`;
+
+            if (!code || code.length !== 3) {
+                alert("USB code must be exactly 3 uppercase letters (e.g. JFF).");
+                return;
+            }
+
+            if (!state.flashDrives[code]) {
+                state.flashDrives[code] = {
+                    code: code,
+                    label: label,
+                    files: []
+                };
+            } else {
+                state.flashDrives[code].label = label;
+            }
+
+            document.getElementById('modUsbCode').value = '';
+            document.getElementById('modUsbLabel').value = '';
+            renderModUsbList();
+            renderDesktopAndExplorer();
+        }
+
+        function renderModUsbList() {
+            const container = document.getElementById('modUsbList');
+            container.innerHTML = '';
+
+            const keys = Object.keys(state.flashDrives);
+            if (keys.length === 0) {
+                container.innerHTML = `<div class="text-gray-500 italic">No USB drives available.</div>`;
+                return;
+            }
+
+            keys.forEach(code => {
+                const drive = state.flashDrives[code];
+                const box = document.createElement('div');
+                box.className = "p-3 bg-black/80 border border-arg-cyan/40 rounded space-y-2";
+                box.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-arg-border/50 pb-1.5">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-compact-disc text-arg-cyan"></i>
+                            <span class="text-arg-cyan font-bold text-sm">[${drive.code}]</span>
+                            <span class="text-white">${drive.label}</span>
+                        </div>
+                        <button onclick="deleteUsbDriveMod('${drive.code}')" class="text-arg-red hover:text-white px-2"><i class="fa-solid fa-trash"></i> Delete Drive</button>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-[11px] text-arg-dim">Files count: ${drive.files.length}</span>
+                        <button onclick="promptAddFileToUsbMod('${drive.code}')" class="px-2 py-0.5 bg-arg-green/20 border border-arg-green text-arg-green rounded text-[10px] font-bold hover:bg-arg-green/30">+ Add File to ${drive.code}</button>
+                    </div>
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        function promptAddFileToUsbMod(usbCode) {
+            playSound('click');
+            const drive = state.flashDrives[usbCode];
+            if (!drive) return;
+
+            const name = prompt(`[USB ${usbCode}] Введите имя файла:`, "Новый_файл");
+            if (!name || !name.trim()) return;
+
+            const typeChoice = prompt("Тип файла:\n1 - Текст (.txt)\n2 - Изображение (.png/.jpg)\n3 - Видео (.mp4)\n4 - Аудио (.mp3)", "1");
+            let type = 'text';
+            if (typeChoice === '2') type = 'image';
+            else if (typeChoice === '3') type = 'video';
+            else if (typeChoice === '4') type = 'audio';
+
+            const clearanceChoice = prompt("Уровень доступа:\n1 - БЕЗ ОГРАНИЧЕНИЙ\n2 - ОМЕГА\n3 - КБЛТ-46", "1");
+            let clearance = 'NONE';
+            if (clearanceChoice === '2') clearance = 'ОМЕГА';
+            else if (clearanceChoice === '3') clearance = 'КБЛТ-46';
+
+            const src = prompt("Содержимое или URL ссылка:", type === 'text' ? "Текст..." : "https://...");
+
+            drive.files.push({
+                id: 'usb_file_' + Date.now(),
+                name: name.trim().replace(/\s+/g, '_'),
+                type: type,
+                clearance: clearance,
+                src: src || ''
+            });
+
+            renderModUsbList();
+            renderDesktopAndExplorer();
+        }
+
+        function deleteUsbDriveMod(code) {
+            playSound('click');
+            delete state.flashDrives[code];
+            if (activeInsertedUsbCode === code) activeInsertedUsbCode = null;
+            renderModUsbList();
+            renderDesktopAndExplorer();
         }
 
         // VAULT & CREDENTIALS MODDER LOGIC
