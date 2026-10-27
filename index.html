@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АРМ "ЗАРИЯ-84" // ZARYA-84 OS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro:ital,wght@0,400;0,700;1,400&family=Share+Tech+Mono&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        arg: {
+                            bg: '#030705',
+                            bezel: '#0a0f0d',
+                            panel: 'rgba(7, 20, 15, 0.94)',
+                            border: '#1b4d30',
+                            green: '#00ff66',
+                            cyan: '#00e5ff',
+                            red: '#ff2a3b',
+                            yellow: '#ffc800',
+                            dim: '#436b53'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"Anonymous Pro"', '"Share Tech Mono"', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #010403;
+            color: #d1f7e2;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .font-mono-code {
+            font-family: 'Anonymous Pro', 'Share Tech Mono', monospace;
+        }
+
+        .laptop-frame {
+            background: linear-gradient(145deg, #151d18, #080d0a);
+            border: 16px solid #0e1411;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.95), 0 25px 60px rgba(0,0,0,0.9);
+            border-radius: 14px;
+        }
+
+        .glass-panel {
+            background: rgba(6, 18, 13, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 102, 0.22);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+        }
+
+        .glass-window {
+            background: rgba(5, 15, 11, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 102, 0.35);
+            box-shadow: 0 14px 50px rgba(0, 0, 0, 0.92), 0 0 20px rgba(0, 255, 102, 0.08);
+        }
+
+        .scanlines {
+            position: relative;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%), linear-gradient(90deg, rgba(0, 255, 0, 0.02), rgba(0, 255, 102, 0.01), rgba(0, 100, 255, 0.02));
+            z-index: 9999;
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+
+        .redacted {
+            background-color: #00ff66;
+            color: #00ff66;
+            border-radius: 2px;
+            padding: 0 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .redacted:hover, .redacted.revealed {
+            background-color: rgba(0, 255, 102, 0.22);
+            color: #00ff66;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(2, 8, 5, 0.8);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1b4d30;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff66;
+        }
+
+        .glow-green { text-shadow: 0 0 12px rgba(0, 255, 102, 0.7); }
+        .glow-red { text-shadow: 0 0 12px rgba(255, 42, 59, 0.85); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake-error {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .window-header { cursor: move; }
+
+        #bgCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="h-full w-full scanlines font-sans overflow-hidden bg-arg-bg flex items-center justify-center p-2 sm:p-4">
+
+    <!-- LAPTOP BEZEL FRAMEWORK -->
+    <div class="laptop-frame relative w-full h-full max-w-7xl max-h-[920px] flex flex-col justify-between overflow-hidden shadow-2xl">
+
+        <!-- Laptop Bezel Header & Hardware LEDs -->
+        <div class="h-7 bg-arg-bezel w-full flex items-center justify-between px-4 text-[11px] font-mono-code text-arg-dim border-b border-arg-border/40 z-50 select-none">
+            <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1.5">
+                    <span id="ledPwr" class="w-2 h-2 rounded-full bg-arg-green animate-pulse"></span>
+                    <span class="text-[10px] text-gray-400">PWR</span>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span id="ledHdd" class="w-2 h-2 rounded-full bg-arg-cyan/50"></span>
+                    <span class="text-[10px] text-gray-400">HDD</span>
+                </span>
+                <span class="hidden sm:inline text-arg-green/80 font-bold ml-2" id="uiDeviceModel">БК-14МЛ // MIL-SPEC</span>
+            </div>
+            
+            <!-- Laptop Webcam Lens -->
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-black border border-gray-700 flex items-center justify-center">
+                    <div class="w-1 h-1 rounded-full bg-blue-800"></div>
+                </div>
+                <div id="camLed" class="w-1.5 h-1.5 rounded-full bg-arg-green/80 animate-ping" title="CAM ACTIVE"></div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline font-bold text-gray-300" id="uiHeaderOrg">ГРУ АФРФ</span>
+            </div>
+        </div>
+
+        <!-- Background Radar Canvas -->
+        <canvas id="bgCanvas"></canvas>
+
+        <!-- ================================================================= -->
+        <!-- LOCK SCREEN -->
+        <!-- ================================================================= -->
+        <div id="loginScreen" class="relative z-40 flex-1 flex flex-col items-center justify-between p-4 sm:p-8 transition-all duration-700">
+            <div class="text-center mt-1 sm:mt-3 z-10">
+                <div id="lockscreenTime" class="font-mono-code text-4xl sm:text-6xl font-bold tracking-wider text-white glow-green">14:00:00</div>
+                <div id="lockscreenDate" class="font-mono-code text-xs sm:text-sm text-arg-green/80 mt-1 uppercase">МОСКВА, МО РФ // MSK TIME</div>
+            </div>
+
+            <div id="loginCard" class="glass-panel w-full max-w-md p-6 sm:p-8 rounded-2xl border border-arg-green/40 text-center relative overflow-hidden my-auto shadow-2xl transition-transform">
+                <div class="relative inline-block mb-3">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-arg-border/50 border-2 border-arg-green flex items-center justify-center text-arg-green text-3xl sm:text-4xl shadow-[0_0_20px_rgba(0,255,102,0.3)]">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-4 h-4 bg-arg-green border-2 border-black rounded-full"></span>
+                </div>
+
+                <h2 id="loginHeading" class="font-mono-code text-base sm:text-lg font-bold text-white tracking-wide mb-1">АВТОРИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ</h2>
+                <p id="loginSubheading" class="font-mono-code text-xs text-arg-dim mb-4">ВВЕДИТЕ УЧЕТНЫЕ ДАННЫЕ</p>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3.5">
+                    <div class="relative text-left">
+                        <label id="lblUsername" class="block font-mono-code text-[11px] text-arg-green/90 mb-1">ИМЯ ПОЛЬЗОВАТЕЛЯ (USERNAME):</label>
+                        <div class="relative">
+                            <input type="text" id="loginUser" required placeholder="Username..." autofocus autocomplete="off"
+                                class="w-full pl-9 pr-4 py-2 bg-black/80 border border-arg-border rounded-lg text-sm text-white font-mono-code focus:outline-none focus:border-arg-green focus:ring-1 focus:ring-arg-green transition">
+                            <i class="fa-solid fa-user absolute left-3 top-3 text-arg-dim text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div class="relative text-left">
+                        <label id="lblPassword" class="block font-mono-code text-[11px] text-arg-green/90 mb-1">ПАРОЛЬ (PASSWORD):</label>
+                        <div class="relative">
+                            <input type="password" id="loginPass" required placeholder="Password..." autocomplete="off"
+                                class="w-full pl-9 pr-10 py-2 bg-black/80 border border-arg-border rounded-lg text-sm text-white font-mono-code focus:outline-none focus:border-arg-green focus:ring-1 focus:ring-arg-green transition">
+                            <i class="fa-solid fa-key absolute left-3 top-3 text-arg-dim text-xs"></i>
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-arg-dim hover:text-arg-green transition">
+                                <i class="fa-solid fa-eye" id="passEyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="loginError" class="hidden p-2.5 rounded bg-arg-red/20 border border-arg-red/60 text-arg-red font-mono-code text-xs flex items-center gap-2 text-left">
+                        <i class="fa-solid fa-triangle-exclamation text-sm shrink-0"></i>
+                        <span id="loginErrorMsg">ОШИБКА АУТЕНТИФИКАЦИИ / AUTHENTICATION ERROR</span>
+                    </div>
+
+                    <button type="submit" id="btnSubmit"
+                        class="w-full py-2.5 mt-2 bg-arg-green/20 hover:bg-arg-green/35 border border-arg-green text-arg-green font-mono-code font-bold tracking-wider rounded-lg transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 glow-green">
+                        <i class="fa-solid fa-right-to-bracket"></i> ВХОД В СИСТЕМУ
+                    </button>
+                </form>
+
+                <div class="mt-4 pt-3 border-t border-arg-border/50 text-center font-mono-code text-[10px] text-arg-dim" id="uiTerminalFooter">
+                    ЗАКРЫТЫЙ ТЕРМИНАЛ // МО РФ АФРФ
+                </div>
+            </div>
+
+            <div class="w-full flex justify-between items-center font-mono-code text-xs text-arg-dim z-10">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wifi text-arg-green"></i>
+                    <span class="hidden sm:inline" id="uiStatusNet">СВЯЗЬ: АРМ-МОСКВА</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-battery-three-quarters text-arg-green"></i>
+                    <span id="uiStatusBat">87% (ЗАРЯДКА)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- DESKTOP ENVIRONMENT -->
+        <!-- ================================================================= -->
+        <div id="desktopEnvironment" class="hidden relative z-10 flex-1 flex flex-col justify-between overflow-hidden">
+            
+            <!-- Top Status Bar & Taskbar -->
+            <div class="h-9 glass-panel border-b border-arg-green/30 px-4 flex items-center justify-between font-mono-code text-xs z-40 select-none">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleStartMenu()" class="px-2.5 py-1 bg-arg-green/20 hover:bg-arg-green/30 border border-arg-green/50 text-arg-green rounded flex items-center gap-2 transition active:scale-95 font-bold">
+                        <i class="fa-solid fa-star"></i> <span id="uiStartBtn">МЕНЮ</span>
+                    </button>
+                    <div id="taskbarItems" class="flex items-center gap-2 border-l border-arg-border/60 pl-3"></div>
+                </div>
+
+                <div class="flex items-center gap-3 sm:gap-4 text-arg-dim">
+                    <button onclick="openModderSuite()" class="px-2 py-0.5 bg-arg-yellow/20 hover:bg-arg-yellow/30 border border-arg-yellow/50 text-arg-yellow rounded text-[11px] font-bold transition flex items-center gap-1" title="Ctrl+Shift+E">
+                        <i class="fa-solid fa-sliders"></i> <span>MODDER</span>
+                    </button>
+                    <button onclick="toggleLanguage()" class="px-2 py-0.5 bg-arg-border/40 hover:bg-arg-green/20 border border-arg-green/40 text-arg-green rounded text-[11px] font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-globe"></i> <span id="deskLangBtnText">РУС / ENG</span>
+                    </button>
+                    <button onclick="toggleAudioFX()" id="audioFxBtn" class="hover:text-arg-green transition flex items-center gap-1" title="Sound FX">
+                        <i class="fa-solid fa-volume-high" id="audioFxIcon"></i>
+                    </button>
+                    <button onclick="toggleScanlines()" class="hover:text-arg-green transition flex items-center gap-1" title="CRT Scanlines">
+                        <i class="fa-solid fa-tv"></i>
+                    </button>
+                    <button onclick="lockSystem()" class="hover:text-arg-red text-gray-400 transition" title="Lock System">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                    <div id="desktopClock" class="text-white font-bold bg-black/60 px-2 py-0.5 rounded border border-arg-border">
+                        00:00:00 MSK
+                    </div>
+                </div>
+
+                <!-- Start Menu Popup -->
+                <div id="startMenu" class="hidden absolute top-11 left-4 w-64 glass-window border border-arg-green/40 rounded-lg p-3 font-mono-code text-xs space-y-2 shadow-2xl z-50">
+                    <div class="pb-2 border-b border-arg-border flex items-center justify-between">
+                        <span class="text-arg-green font-bold" id="uiStartUser">VladIvanAFRF</span>
+                        <span class="text-[10px] text-arg-dim" id="uiStartRank">МАЙОР ИВАНОВ</span>
+                    </div>
+                    <button onclick="openWindow('windowNotebook'); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-green flex items-center gap-2">
+                        <i class="fa-solid fa-book-journal-whills text-arg-green"></i> <span id="menuNote">Записная книжка</span>
+                    </button>
+                    <button onclick="openWindow('windowTerminal'); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-cyan flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-arg-cyan"></i> <span id="menuTerm">Терминал СВЧ</span>
+                    </button>
+                    <button onclick="openWindow('windowEvidence'); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-yellow flex items-center gap-2">
+                        <i class="fa-solid fa-folder-closed text-arg-yellow"></i> <span id="menuEvid">Фото-Архив</span>
+                    </button>
+                    <button onclick="openWindow('windowVault'); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-green/20 text-gray-200 hover:text-arg-red flex items-center gap-2">
+                        <i class="fa-solid fa-vault text-arg-red"></i> <span id="menuVault">Зашифрованный Сейф</span>
+                    </button>
+                    <div class="pt-2 border-t border-arg-border">
+                        <button onclick="lockSystem(); toggleStartMenu();" class="w-full text-left px-2 py-1.5 rounded hover:bg-arg-red/20 text-arg-red flex items-center gap-2">
+                            <i class="fa-solid fa-lock"></i> <span id="menuLock">Заблокировать</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workspace Desktop Grid -->
+            <div id="workspace" class="relative flex-1 w-full h-full p-6 overflow-hidden">
+                <div id="desktopIconContainer" class="grid grid-cols-2 sm:grid-cols-1 gap-4 w-36 z-10 relative">
+                    <!-- Standard Fixed App Icons -->
+                    <button onclick="openWindow('windowNotebook')" class="group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center">
+                        <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-green/40 flex items-center justify-center text-arg-green text-2xl group-hover:scale-110 transition shadow-lg">
+                            <i class="fa-solid fa-book-journal-whills"></i>
+                        </div>
+                        <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-green tracking-wide" id="iconNote">Записник.log</span>
+                    </button>
+
+                    <button onclick="openWindow('windowTerminal')" class="group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center">
+                        <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-cyan/40 flex items-center justify-center text-arg-cyan text-2xl group-hover:scale-110 transition shadow-lg">
+                            <i class="fa-solid fa-terminal"></i>
+                        </div>
+                        <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-cyan tracking-wide" id="iconTerm">Терминал_СВЧ</span>
+                    </button>
+
+                    <button onclick="openWindow('windowEvidence')" class="group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center">
+                        <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-yellow/40 flex items-center justify-center text-arg-yellow text-2xl group-hover:scale-110 transition shadow-lg">
+                            <i class="fa-solid fa-folder-closed"></i>
+                        </div>
+                        <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-yellow tracking-wide" id="iconEvid">Фото-Архив</span>
+                    </button>
+
+                    <button onclick="openWindow('windowVault')" class="group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center">
+                        <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-red/40 flex items-center justify-center text-arg-red text-2xl group-hover:scale-110 transition shadow-lg">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                        <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-red tracking-wide" id="iconVault">Сейф_Архива</span>
+                    </button>
+
+                    <!-- Dynamic Custom Files and Folders render here -->
+                </div>
+
+                <!-- APP 1: NOTEBOOK -->
+                <div id="windowNotebook" class="window-instance glass-window absolute top-6 left-6 sm:left-44 w-[90%] sm:w-[640px] h-[460px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-green/40">
+                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
+                        <div class="flex items-center gap-2 text-arg-green font-mono-code text-xs">
+                            <i class="fa-solid fa-book-journal-whills"></i>
+                            <span id="winTitleNote">ЗАПИСНИК // МАЙОР ИВАНОВ В. И.</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="minimizeWindow('windowNotebook')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <button onclick="toggleMaximize('windowNotebook')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
+                            <button onclick="closeWindow('windowNotebook')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex overflow-hidden">
+                        <div id="notebookSidebar" class="w-52 bg-black/60 border-r border-arg-border/60 p-2 font-mono-code text-xs flex flex-col gap-1 overflow-y-auto">
+                            <!-- Rendered dynamically -->
+                        </div>
+                        <div id="notebookContent" class="flex-1 p-5 overflow-y-auto font-mono-code text-xs leading-relaxed text-gray-200 bg-black/30"></div>
+                    </div>
+                </div>
+
+                <!-- APP 2: TERMINAL -->
+                <div id="windowTerminal" class="window-instance glass-window absolute top-10 left-10 sm:left-56 w-[90%] sm:w-[600px] h-[400px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-cyan/40">
+                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
+                        <div class="flex items-center gap-2 text-arg-cyan font-mono-code text-xs">
+                            <i class="fa-solid fa-terminal"></i>
+                            <span id="winTitleTerm">ТЕРМИНАЛ СВЧ // МО_РФ_ГРУ</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="minimizeWindow('windowTerminal')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <button onclick="toggleMaximize('windowTerminal')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
+                            <button onclick="closeWindow('windowTerminal')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-4 bg-black/90 font-mono-code text-xs overflow-y-auto flex flex-col justify-between" id="terminalContainer">
+                        <div id="terminalOutput" class="space-y-2 text-arg-cyan/90">
+                            <div id="termWelcome">Консоль лэптопа активирована. Введите <span class="text-white underline">помощь</span> для списка команд.</div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-2 border-t border-arg-border/40 mt-2">
+                            <span class="text-arg-cyan font-bold">vladivan@gru-laptop:~$</span>
+                            <input type="text" id="terminalInput" class="flex-1 bg-transparent text-white font-mono-code focus:outline-none" autofocus autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APP 3: EVIDENCE -->
+                <div id="windowEvidence" class="window-instance glass-window absolute top-14 left-12 sm:left-64 w-[90%] sm:w-[620px] h-[440px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-yellow/40">
+                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
+                        <div class="flex items-center gap-2 text-arg-yellow font-mono-code text-xs">
+                            <i class="fa-solid fa-folder-closed"></i>
+                            <span id="winTitleEvid">ФОТО-АРХИВ МАТЕРИАЛОВ</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="minimizeWindow('windowEvidence')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <button onclick="toggleMaximize('windowEvidence')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
+                            <button onclick="closeWindow('windowEvidence')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-4 overflow-y-auto bg-black/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div onclick="inspectEvidence('blueprint')" class="cursor-pointer bg-black/60 border border-arg-border hover:border-arg-yellow p-3 rounded-lg transition">
+                            <div class="h-28 bg-arg-border/20 rounded flex items-center justify-center mb-2 text-4xl text-arg-yellow/70"><i class="fa-solid fa-map"></i></div>
+                            <div class="font-mono-code text-xs text-white font-bold" id="evid1Title">Схема_ЗАРЯ.RAW</div>
+                        </div>
+                        <div onclick="inspectEvidence('photo')" class="cursor-pointer bg-black/60 border border-arg-border hover:border-arg-yellow p-3 rounded-lg transition">
+                            <div class="h-28 bg-arg-border/20 rounded flex items-center justify-center mb-2 text-4xl text-arg-green/70"><i class="fa-solid fa-satellite-dish"></i></div>
+                            <div class="font-mono-code text-xs text-white font-bold" id="evid2Title">Спутник_01.PNG</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidence Inspection Modal -->
+                <div id="evidenceModal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md p-6 flex flex-col items-center justify-center">
+                    <div class="glass-panel max-w-md w-full p-6 rounded-xl border border-arg-yellow relative">
+                        <button onclick="closeEvidenceModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                        <h3 id="modalTitle" class="font-mono-code text-base font-bold text-arg-yellow mb-2">Улика</h3>
+                        <div id="modalGraphic" class="w-full h-40 bg-black/80 border border-arg-border rounded-lg flex items-center justify-center mb-4 text-5xl text-arg-yellow"></div>
+                        <p id="modalDesc" class="font-mono-code text-xs text-gray-300 mb-4"></p>
+                    </div>
+                </div>
+
+                <!-- APP 4: ENCRYPTED VAULT -->
+                <div id="windowVault" class="window-instance glass-window absolute top-20 left-16 sm:left-80 w-[90%] sm:w-[480px] h-[450px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-red/40">
+                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
+                        <div class="flex items-center gap-2 text-arg-red font-mono-code text-xs">
+                            <i class="fa-solid fa-vault"></i>
+                            <span id="winTitleVault">ЗАШИФРОВАННЫЙ СЕЙФ</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="minimizeWindow('windowVault')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <button onclick="toggleMaximize('windowVault')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
+                            <button onclick="closeWindow('windowVault')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex-1 p-6 bg-black/90 flex flex-col items-center justify-between font-mono-code">
+                        <div id="vaultLockedState" class="w-full flex flex-col items-center">
+                            <div class="text-arg-red text-3xl mb-1 animate-pulse"><i class="fa-solid fa-lock"></i></div>
+                            <div class="text-arg-red font-bold text-xs tracking-wider mb-3" id="vaultPrompt">ВВЕДИТЕ PIN-КОД ДОСТУПА</div>
+
+                            <div id="pinDisplay" class="w-44 h-11 bg-black border-2 border-arg-red/60 rounded flex items-center justify-center text-arg-red font-bold text-xl tracking-widest mb-5 glow-red">
+                                ----
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2.5 w-48">
+                                <button onclick="pressPin('1')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">1</button>
+                                <button onclick="pressPin('2')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">2</button>
+                                <button onclick="pressPin('3')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">3</button>
+                                <button onclick="pressPin('4')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">4</button>
+                                <button onclick="pressPin('5')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">5</button>
+                                <button onclick="pressPin('6')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">6</button>
+                                <button onclick="pressPin('7')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">7</button>
+                                <button onclick="pressPin('8')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">8</button>
+                                <button onclick="pressPin('9')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">9</button>
+                                <button onclick="clearPin()" class="py-2 bg-arg-red/20 border border-arg-red text-arg-red text-[10px] rounded" id="btnPinReset">СБРОС</button>
+                                <button onclick="pressPin('0')" class="py-2 bg-black/60 border border-arg-border hover:border-arg-red text-white text-xs rounded">0</button>
+                                <button onclick="submitPin()" class="py-2 bg-arg-green/20 border border-arg-green text-arg-green text-[10px] rounded font-bold" id="btnPinEnter">ВВОД</button>
+                            </div>
+                        </div>
+
+                        <div id="vaultUnlockedState" class="hidden w-full h-full flex flex-col justify-between text-left">
+                            <div class="p-2.5 bg-arg-green/10 border border-arg-green/40 rounded text-arg-green text-xs font-bold flex items-center gap-2" id="vaultUnlockedHeader">
+                                <i class="fa-solid fa-unlock-keyhole"></i> СЕЙФ РАССЕКРЕЧЕН
+                            </div>
+                            <div class="flex-1 my-3 overflow-y-auto text-xs text-gray-200 leading-relaxed" id="vaultUnlockedContent">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button onclick="resetVault()" class="py-2 w-full bg-black border border-arg-border hover:border-white text-gray-400 hover:text-white rounded text-xs" id="btnVaultLock">ЗАБЛОКИРОВАТЬ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APP 5: FILE EXPLORER WINDOW -->
+                <div id="windowExplorer" class="window-instance glass-window absolute top-12 left-12 sm:left-48 w-[90%] sm:w-[600px] h-[420px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-green/40">
+                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
+                        <div class="flex items-center gap-2 text-arg-green font-mono-code text-xs">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span id="explorerWinTitle">FILE EXPLORER</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="minimizeWindow('windowExplorer')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
+                            <button onclick="toggleMaximize('windowExplorer')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
+                            <button onclick="closeWindow('windowExplorer')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="bg-black/90 border-b border-arg-border p-2 px-4 flex items-center justify-between font-mono-code text-xs text-arg-dim">
+                        <div class="flex items-center gap-2">
+                            <button onclick="navigateExplorerUp()" class="px-2 py-1 bg-arg-border/40 hover:bg-arg-green/20 text-arg-green rounded border border-arg-green/30" title="Back">
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                            <div id="explorerBreadcrumb" class="text-gray-300 font-bold">Root</div>
+                        </div>
+                        <button onclick="promptCreateFolderInExplorer()" class="px-2 py-1 bg-arg-green/20 hover:bg-arg-green/30 text-arg-green rounded border border-arg-green/50 text-[11px] font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-folder-plus"></i> <span id="btnExpNewFolder">+ Новый папка</span>
+                        </button>
+                    </div>
+                    <div id="explorerGrid" class="flex-1 p-4 bg-black/60 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-4">
+                        <!-- Dynamic Folder & File contents render here -->
+                    </div>
+                </div>
+
+                <!-- MEDIA VIEWER MODAL -->
+                <div id="mediaViewerModal" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md p-6 flex flex-col items-center justify-center">
+                    <div class="glass-window max-w-2xl w-full max-h-[85vh] p-4 rounded-xl border border-arg-cyan relative flex flex-col">
+                        <div class="flex justify-between items-center pb-2 mb-3 border-b border-arg-border font-mono-code">
+                            <h3 id="mediaTitle" class="text-sm font-bold text-arg-cyan">Media Title</h3>
+                            <button onclick="closeMediaViewer()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                        </div>
+                        <div id="mediaContainer" class="flex-1 overflow-auto flex items-center justify-center bg-black/80 rounded border border-arg-border/50 p-2"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- DEVELOPER / STORY MODDER SUITE MODAL -->
+        <!-- ================================================================= -->
+        <div id="modderSuiteModal" class="hidden fixed inset-0 z-[100] bg-black/90 backdrop-blur-lg p-4 sm:p-6 flex items-center justify-center">
+            <div class="glass-window w-full max-w-4xl h-[90vh] rounded-2xl border-2 border-arg-yellow flex flex-col overflow-hidden shadow-2xl font-mono-code text-xs">
+                
+                <!-- Modder Header -->
+                <div class="bg-black/90 px-5 py-3 border-b border-arg-yellow/40 flex items-center justify-between text-arg-yellow font-bold">
+                    <div class="flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>ARG STORY MODDER / EDITOR SUITE</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportScenarioJSON()" class="px-2.5 py-1 bg-arg-green/20 border border-arg-green hover:bg-arg-green/30 text-arg-green rounded flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-download"></i> EXPORT (.JSON)
+                        </button>
+                        <label class="px-2.5 py-1 bg-arg-cyan/20 border border-arg-cyan hover:bg-arg-cyan/30 text-arg-cyan rounded cursor-pointer flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-upload"></i> LOAD (.JSON)
+                            <input type="file" id="jsonFileInput" accept=".json" onchange="importScenarioJSON(event)" class="hidden">
+                        </label>
+                        <button onclick="closeModderSuite()" class="text-gray-400 hover:text-arg-red ml-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                </div>
+
+                <!-- Modder Nav Tabs -->
+                <div class="bg-black/60 px-5 border-b border-arg-border flex items-center gap-4 text-gray-300">
+                    <button onclick="switchModderTab('tabNotebook')" id="tabBtnNotebook" class="modder-tab active-mod-tab py-2.5 border-b-2 border-arg-yellow text-arg-yellow font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-book"></i> Notebook Entries
+                    </button>
+                    <button onclick="switchModderTab('tabFiles')" id="tabBtnFiles" class="modder-tab py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-folder-tree"></i> Files & Folders
+                    </button>
+                    <button onclick="switchModderTab('tabVault')" id="tabBtnVault" class="modder-tab py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-key"></i> Credentials & Vault
+                    </button>
+                </div>
+
+                <!-- Modder Body Content Area -->
+                <div class="flex-1 p-5 overflow-y-auto bg-black/40 space-y-4">
+                    
+                    <!-- TAB 1: NOTEBOOK ENTRY MANAGER -->
+                    <div id="tabNotebook" class="space-y-4">
+                        <div class="p-3 bg-arg-border/20 border border-arg-border rounded flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-arg-yellow font-bold">Select Notebook Entry:</span>
+                                <select id="modNoteSelect" onchange="loadNotebookEntryToEdit()" class="bg-black border border-arg-border text-white px-3 py-1 rounded focus:outline-none focus:border-arg-yellow">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="createNewNotebookEntry()" class="px-2.5 py-1 bg-arg-green/20 border border-arg-green text-arg-green hover:bg-arg-green/30 rounded font-bold">
+                                    + New Entry
+                                </button>
+                                <button onclick="deleteCurrentNotebookEntry()" class="px-2.5 py-1 bg-arg-red/20 border border-arg-red text-arg-red hover:bg-arg-red/30 rounded font-bold">
+                                    Delete Entry
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-gray-400 mb-1">Entry Title:</label>
+                                <input type="text" id="modNoteTitle" class="w-full bg-black border border-arg-border p-2 rounded text-white focus:outline-none focus:border-arg-yellow">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 mb-1">Classification Code:</label>
+                                <input type="text" id="modNoteClass" class="w-full bg-black border border-arg-border p-2 rounded text-white focus:outline-none focus:border-arg-yellow">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-400 mb-1">Entry Content (HTML or plain text supported):</label>
+                            <p class="text-[10px] text-arg-dim mb-1">Use <code class="text-arg-green">[REDACTED]hidden text[/REDACTED]</code> syntax to create blacked-out ARG secret clues.</p>
+                            <textarea id="modNoteBody" rows="7" class="w-full bg-black border border-arg-border p-3 rounded text-white font-mono-code focus:outline-none focus:border-arg-yellow"></textarea>
+                        </div>
+
+                        <button onclick="saveNotebookEntryMod()" class="w-full py-2 bg-arg-yellow/20 hover:bg-arg-yellow/35 border border-arg-yellow text-arg-yellow font-bold rounded">
+                            SAVE NOTEBOOK ENTRY
+                        </button>
+                    </div>
+
+                    <!-- TAB 2: FILES & FOLDERS MANAGER -->
+                    <div id="tabFiles" class="hidden space-y-4">
+                        <div class="p-3 bg-arg-border/20 border border-arg-border rounded font-mono-code">
+                            <h4 class="text-arg-yellow font-bold mb-2">Add New File or Folder</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Type:</label>
+                                    <select id="modFileType" onchange="toggleFileModType()" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                        <option value="folder">Folder</option>
+                                        <option value="image">Image File</option>
+                                        <option value="video">Video File</option>
+                                        <option value="text">Text Document</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Name:</label>
+                                    <input type="text" id="modFileName" placeholder="e.g. Secret_Plan" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Parent Location:</label>
+                                    <select id="modFileParent" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                        <option value="root">Desktop (Root)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="modFileContentGroup" class="hidden mb-3">
+                                <label class="block text-gray-400 mb-1">Content URL / Text Data:</label>
+                                <input type="text" id="modFileSrc" placeholder="https://... or Image Data URL or text content" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                            </div>
+
+                            <button onclick="addNewCustomFileOrFolder()" class="w-full py-2 bg-arg-green/20 border border-arg-green text-arg-green font-bold rounded hover:bg-arg-green/30">
+                                + ADD FILE / FOLDER TO SYSTEM
+                            </button>
+                        </div>
+
+                        <div>
+                            <h4 class="text-gray-300 font-bold mb-2">Existing Files & Folders Directory:</h4>
+                            <div id="modFileList" class="space-y-1.5 max-h-52 overflow-y-auto border border-arg-border p-2 bg-black/60 rounded">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: CREDENTIALS & VAULT SECRET -->
+                    <div id="tabVault" class="hidden space-y-4">
+                        <div class="p-4 bg-arg-border/20 border border-arg-border rounded space-y-3">
+                            <h4 class="text-arg-yellow font-bold">Login Credentials Configuration</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Laptop Username:</label>
+                                    <input type="text" id="modConfigUser" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 mb-1">Laptop Password:</label>
+                                    <input type="password" id="modConfigPass" class="w-full bg-black border border-arg-border p-2 rounded text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-arg-border/20 border border-arg-border rounded space-y-3">
+                            <h4 class="text-arg-red font-bold">Encrypted Vault Settings (Hidden Secret)</h4>
+                            <div>
+                                <label class="block text-gray-400 mb-1">Vault 4-Digit PIN Code (Masked):</label>
+                                <input type="password" id="modConfigVaultPin" maxlength="4" placeholder="••••" class="w-full bg-black border border-arg-red/60 p-2 rounded text-arg-red font-bold text-center tracking-widest">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 mb-1">Vault Unlocked Content (HTML / Text Payload):</label>
+                                <textarea id="modConfigVaultPayload" rows="4" class="w-full bg-black border border-arg-border p-2 rounded text-white font-mono-code"></textarea>
+                            </div>
+                        </div>
+
+                        <button onclick="saveVaultConfigMod()" class="w-full py-2 bg-arg-yellow/20 hover:bg-arg-yellow/35 border border-arg-yellow text-arg-yellow font-bold rounded">
+                            SAVE SECURITY CONFIGURATION
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        let currentLang = 'ru'; // 'ru' or 'en'
+        let soundEnabled = true;
+        let audioCtx = null;
+        let highestZIndex = 30;
+        let currentPin = "";
+        let activeDocId = 'doc1';
+        let currentExplorerParent = 'root';
+        const MODDER_PASSCODE = "09SAPORT05";
+
+        // Master State Object (Exportable to JSON)
+        let state = {
+            credentials: {
+                username: "VladIvanAFRF",
+                password: "KBLT46"
+            },
+            vault: {
+                pin: "1984",
+                unlockedContent: `<p class="text-arg-cyan mb-1">>>> SECRET ARCHIVE "ZARYA"</p><p>Major <span class="text-arg-green font-bold">VladIvanAFRF</span> cleared for access. Intelligence Payload: <span class="text-arg-yellow font-bold bg-black px-1 border border-arg-yellow">ZARYA_VICTORY_2026</span>.</p>`
+            },
+            notebookEntries: [
+                {
+                    id: 'doc1',
+                    title: '01: System Audit Log',
+                    classification: 'SECRET // МО РФ',
+                    body: `<h3 class="text-arg-green font-bold text-sm mb-2">СИСТЕМНЫЙ АУДИТ АРМ "ЗАРЯ-84"</h3><p class="mb-2">Сеанс связи МО РФ подтвержден. Код доступа майора Иванова В. И. активен.</p><p class="mb-2">Шифр к зашифрованному сейфу архива скрыт и передан в спецпакете. [REDACTED]Ищите код в терминале или файлах[/REDACTED].</p>`
+                },
+                {
+                    id: 'doc2',
+                    title: '02: Operation Zarya Plan',
+                    classification: 'CONFIDENTIAL',
+                    body: `<h3 class="text-arg-green font-bold text-sm mb-2">ПЛАН СПЕЦОПЕРАЦИИ</h3><p class="mb-2">Для работы с дисковым пространством используйте терминал CLI или проводник папок.</p><p>Подсказка команды: <span class="text-arg-cyan">расшифровать</span> или <span class="text-arg-cyan">decode</span>.</p>`
+                },
+                {
+                    id: 'doc3',
+                    title: '03: Agent Cipher Note',
+                    classification: 'RESTRICTED',
+                    body: `<h3 class="text-arg-yellow font-bold text-sm mb-2">ШИФРОГРАММА В. И.</h3><p class="mb-1">Идентификатор агента: <span class="text-arg-green font-bold">VladIvanAFRF</span></p><p>Все временные данные сохранены в локальном проводнике.</p>`
+                }
+            ],
+            fs: [
+                { id: 'f1', name: 'Classified_Folder', type: 'folder', parent: 'root' },
+                { id: 'f2', name: 'Operation_Eclipse', type: 'folder', parent: 'f1' }
+            ]
+        };
+
+        const i18n = {
+            ru: {
+                deviceModel: "СПЕЦСВЯЗЬ МО РФ // БК-14МЛ",
+                headerOrg: "ГРУ АФРФ",
+                lockDate: "МОСКВА, МО РФ // ТЕКУЩЕЕ ВРЕМЯ",
+                loginHeading: "АВТОРИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ",
+                loginSubheading: "ВВЕДИТЕ УЧЕТНЫЕ ДАННЫЕ ВХОДА",
+                lblUsername: "ИМЯ ПОЛЬЗОВАТЕЛЯ (USERNAME):",
+                lblPassword: "ПАРОЛЬ (PASSWORD):",
+                btnSubmit: "<i class=\"fa-solid fa-right-to-bracket\"></i> ВХОД В СИСТЕМУ",
+                errorMsg: "ОШИБКА АУТЕНТИФИКАЦИИ / AUTHENTICATION ERROR",
+                terminalFooter: "ЗАКРЫТЫЙ ТЕРМИНАЛ // МО РФ АФРФ",
+                statusNet: "СВЯЗЬ: АРМ-МОСКВА",
+                statusBat: "87% (ЗАРЯДКА)",
+                startBtn: "МЕНЮ",
+                startUser: "VladIvanAFRF",
+                startRank: "МАЙОР ИВАНОВ",
+                menuNote: "Записная книжка",
+                menuTerm: "Терминал СВЧ",
+                menuEvid: "Фото-Архив",
+                menuVault: "Зашифрованный Сейф",
+                menuLock: "Заблокировать",
+                iconNote: "Записник.log",
+                iconTerm: "Терминал_СВЧ",
+                iconEvid: "Фото-Архив",
+                iconVault: "Сейф_Архива",
+                winTitleNote: "ЗАПИСНИК // МАЙОР ИВАНОВ В. И.",
+                winTitleTerm: "ТЕРМИНАЛ СВЧ // МО_РФ_ГРУ",
+                winTitleEvid: "ФОТО-АРХИВ МАТЕРИАЛОВ",
+                winTitleVault: "ЗАШИФРОВАННЫЙ СЕЙФ",
+                termWelcome: "Консоль лэптопа активирована. Введите <span class=\"text-white underline\">помощь</span> для списка команд.",
+                evid1Title: "Схема_ЗАРЯ.RAW",
+                evid2Title: "Спутник_01.PNG",
+                vaultPrompt: "ВВЕДИТЕ PIN-КОД ДОСТУПА",
+                btnPinReset: "СБРОС",
+                btnPinEnter: "ВВОД",
+                vaultUnlockedHeader: "<i class=\"fa-solid fa-unlock-keyhole\"></i> СЕЙФ РАССЕКРЕЧЕН",
+                btnVaultLock: "ЗАБЛОКИРОВАТЬ",
+                deskLangBtnText: "РУС / ENG",
+                btnExpNewFolder: "+ Новый папка"
+            },
+            en: {
+                deviceModel: "MIL-SPEC SECURE // BK-14ML",
+                headerOrg: "GRU AFRF",
+                lockDate: "MOSCOW, RU // CURRENT MSK TIME",
+                loginHeading: "USER AUTHENTICATION",
+                loginSubheading: "ENTER CREDENTIALS TO PROCEED",
+                lblUsername: "USERNAME:",
+                lblPassword: "PASSWORD:",
+                btnSubmit: "<i class=\"fa-solid fa-right-to-bracket\"></i> SYSTEM LOGIN",
+                errorMsg: "AUTHENTICATION ERROR / INVALID CREDENTIALS",
+                terminalFooter: "SECURE LAPTOP TERMINAL // GRU MIL",
+                statusNet: "NET: SECURE-MOSCOW",
+                statusBat: "87% (CHARGING)",
+                startBtn: "START",
+                startUser: "VladIvanAFRF",
+                startRank: "MAJOR IVANOV",
+                menuNote: "Case Notebook",
+                menuTerm: "Terminal CLI",
+                menuEvid: "Evidence Locker",
+                menuVault: "Encrypted Vault",
+                menuLock: "Lock System",
+                iconNote: "Notebook.log",
+                iconTerm: "Terminal_CLI",
+                iconEvid: "Evidence_Archive",
+                iconVault: "Vault_Archive",
+                winTitleNote: "NOTEBOOK // MAJOR IVANOV V. I.",
+                winTitleTerm: "TERMINAL CLI // GRU_SECURE",
+                winTitleEvid: "EVIDENCE FILES & PHOTOS",
+                winTitleVault: "ENCRYPTED VAULT",
+                termWelcome: "Laptop terminal online. Type <span class=\"text-white underline\">help</span> for commands.",
+                evid1Title: "Blueprint_ZARYA.RAW",
+                evid2Title: "Satellite_01.PNG",
+                vaultPrompt: "ENTER VAULT PIN CODE",
+                btnPinReset: "CLEAR",
+                btnPinEnter: "ENTER",
+                vaultUnlockedHeader: "<i class=\"fa-solid fa-unlock-keyhole\"></i> VAULT UNLOCKED",
+                btnVaultLock: "LOCK VAULT",
+                deskLangBtnText: "ENG / РУС",
+                btnExpNewFolder: "+ New Folder"
+            }
+        };
+
+        function toggleLanguage() {
+            playSound('click');
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const langData = i18n[currentLang];
+            for (let key in langData) {
+                const elem = document.getElementById(key) || document.getElementById('ui' + key.charAt(0).toUpperCase() + key.slice(1));
+                if (elem) elem.innerHTML = langData[key];
+            }
+            renderNotebook();
+            renderDesktopAndExplorer();
+        }
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(850, now);
+                    osc.frequency.exponentialRampToValueAtTime(420, now + 0.04);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+                    osc.start(now); osc.stop(now + 0.04);
+                } else if (type === 'key') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(450 + Math.random() * 250, now);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    osc.start(now); osc.stop(now + 0.03);
+                } else if (type === 'granted') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now); osc.stop(now + 0.4);
+                } else if (type === 'denied') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.setValueAtTime(110, now + 0.12);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                }
+            } catch (e) {}
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') playSound('key');
+            if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+                e.preventDefault();
+                openModderSuite();
+            }
+        });
+
+        function togglePasswordVisibility() {
+            playSound('click');
+            const input = document.getElementById('loginPass');
+            const icon = document.getElementById('passEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function toggleAudioFX() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('audioFxIcon');
+            icon.className = soundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+            if (soundEnabled) playSound('click');
+        }
+
+        function toggleScanlines() {
+            document.body.classList.toggle('scanlines');
+            playSound('click');
+        }
+
+        function updateClocks() {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const mskDate = new Date(utc + (3600000 * 3));
+
+            const hours = String(mskDate.getHours()).padStart(2, '0');
+            const minutes = String(mskDate.getMinutes()).padStart(2, '0');
+            const seconds = String(mskDate.getSeconds()).padStart(2, '0');
+            const timeStr = `${hours}:${minutes}:${seconds}`;
+
+            document.getElementById('lockscreenTime').innerText = timeStr;
+            document.getElementById('desktopClock').innerText = `${timeStr} MSK`;
+        }
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        // Canvas Background Grid Sweep
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = canvas.parentElement.clientWidth;
+        let height = canvas.height = canvas.parentElement.clientHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = canvas.parentElement.clientWidth;
+            height = canvas.height = canvas.parentElement.clientHeight;
+        });
+
+        let angle = 0;
+        function drawRadar() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(0, 255, 102, 0.04)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < width; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+            for (let y = 0; y < height; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+
+            const cx = width / 2; const cy = height / 2;
+            const radius = Math.min(width, height) * 0.4;
+
+            ctx.strokeStyle = 'rgba(0, 255, 102, 0.15)';
+            ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2); ctx.stroke();
+
+            angle += 0.015;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, radius, angle, angle + 0.25);
+            ctx.fillStyle = 'rgba(0, 255, 102, 0.08)'; ctx.fill();
+            requestAnimationFrame(drawRadar);
+        }
+        drawRadar();
+
+        // Login Handler
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            const errorBox = document.getElementById('loginError');
+            const card = document.getElementById('loginCard');
+            const ledHdd = document.getElementById('ledHdd');
+
+            if (user === state.credentials.username && pass === state.credentials.password) {
+                playSound('granted');
+                errorBox.classList.add('hidden');
+                ledHdd.className = "w-2 h-2 rounded-full bg-arg-green animate-ping";
+                
+                const loginScreen = document.getElementById('loginScreen');
+                loginScreen.classList.add('opacity-0', 'pointer-events-none');
+                
+                setTimeout(() => {
+                    loginScreen.classList.add('hidden');
+                    document.getElementById('desktopEnvironment').classList.remove('hidden');
+                    openWindow('windowNotebook');
+                    renderNotebook();
+                    renderDesktopAndExplorer();
+                }, 500);
+            } else {
+                playSound('denied');
+                errorBox.classList.remove('hidden');
+                card.classList.add('shake-error');
+                ledHdd.className = "w-2 h-2 rounded-full bg-arg-red animate-ping";
+                setTimeout(() => {
+                    card.classList.remove('shake-error');
+                    ledHdd.className = "w-2 h-2 rounded-full bg-arg-cyan/50";
+                }, 450);
+            }
+        }
+
+        function lockSystem() {
+            playSound('click');
+            document.getElementById('desktopEnvironment').classList.add('hidden');
+            const loginScreen = document.getElementById('loginScreen');
+            loginScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            document.getElementById('loginUser').value = "";
+            document.getElementById('loginPass').value = "";
+        }
+
+        // Draggable Window Manager
+        function makeDraggable(win) {
+            const header = win.querySelector('.window-header');
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+                isDragging = true;
+                bringToFront(win);
+                startX = e.clientX; startY = e.clientY;
+                initialLeft = win.offsetLeft; initialTop = win.offsetTop;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                win.style.left = `${initialLeft + (e.clientX - startX)}px`;
+                win.style.top = `${initialTop + (e.clientY - startY)}px`;
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+
+            win.addEventListener('mousedown', () => bringToFront(win));
+        }
+
+        function bringToFront(win) {
+            highestZIndex++;
+            win.style.zIndex = highestZIndex;
+        }
+
+        document.querySelectorAll('.window-instance').forEach(win => makeDraggable(win));
+
+        function openWindow(id) {
+            playSound('click');
+            const win = document.getElementById(id);
+            if (win) {
+                win.classList.remove('hidden');
+                bringToFront(win);
+                updateTaskbar();
+            }
+        }
+
+        function closeWindow(id) {
+            playSound('click');
+            const win = document.getElementById(id);
+            if (win) {
+                win.classList.add('hidden');
+                updateTaskbar();
+            }
+        }
+
+        function minimizeWindow(id) {
+            playSound('click');
+            const win = document.getElementById(id);
+            if (win) {
+                win.classList.add('hidden');
+                updateTaskbar();
+            }
+        }
+
+        function toggleMaximize(id) {
+            playSound('click');
+            const win = document.getElementById(id);
+            if (win) {
+                win.classList.toggle('w-full');
+                win.classList.toggle('h-full');
+                win.classList.toggle('top-0');
+                win.classList.toggle('left-0');
+            }
+        }
+
+        function updateTaskbar() {
+            const container = document.getElementById('taskbarItems');
+            container.innerHTML = '';
+
+            const windows = [
+                { id: 'windowNotebook', title: currentLang === 'ru' ? 'Записник' : 'Notebook', icon: 'fa-book-journal-whills', color: 'text-arg-green' },
+                { id: 'windowTerminal', title: currentLang === 'ru' ? 'Терминал' : 'Terminal', icon: 'fa-terminal', color: 'text-arg-cyan' },
+                { id: 'windowEvidence', title: currentLang === 'ru' ? 'Архив' : 'Evidence', icon: 'fa-folder-closed', color: 'text-arg-yellow' },
+                { id: 'windowVault', title: currentLang === 'ru' ? 'Сейф' : 'Vault', icon: 'fa-vault', color: 'text-arg-red' },
+                { id: 'windowExplorer', title: currentLang === 'ru' ? 'Проводник' : 'Explorer', icon: 'fa-folder-open', color: 'text-arg-green' }
+            ];
+
+            windows.forEach(w => {
+                const winElem = document.getElementById(w.id);
+                if (winElem && !winElem.classList.contains('hidden')) {
+                    const btn = document.createElement('button');
+                    btn.className = `px-2 py-0.5 bg-black/50 border border-arg-border rounded text-[11px] font-mono-code ${w.color} flex items-center gap-1 hover:border-white transition`;
+                    btn.innerHTML = `<i class="fa-solid ${w.icon}"></i> ${w.title}`;
+                    btn.onclick = () => bringToFront(winElem);
+                    container.appendChild(btn);
+                }
+            });
+        }
+
+        function toggleStartMenu() {
+            playSound('click');
+            document.getElementById('startMenu').classList.toggle('hidden');
+        }
+
+        // =================================================================
+        // NOTEBOOK SYSTEM & PARSER
+        // =================================================================
+        function renderNotebook() {
+            const sidebar = document.getElementById('notebookSidebar');
+            sidebar.innerHTML = '';
+
+            state.notebookEntries.forEach((entry, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `doc-btn w-full text-left px-2 py-2 rounded font-mono-code text-xs flex items-center gap-2 transition ${entry.id === activeDocId ? 'text-arg-green bg-arg-green/10 border border-arg-green/30' : 'text-gray-300 hover:bg-arg-green/10'}`;
+                btn.innerHTML = `<i class="fa-regular fa-file-lines"></i> <span class="truncate">${entry.title}</span>`;
+                btn.onclick = () => loadNotebookDoc(entry.id);
+                sidebar.appendChild(btn);
+            });
+
+            if (state.notebookEntries.length > 0 && !state.notebookEntries.find(e => e.id === activeDocId)) {
+                activeDocId = state.notebookEntries[0].id;
+            }
+            loadNotebookDoc(activeDocId);
+        }
+
+        function loadNotebookDoc(id) {
+            playSound('click');
+            activeDocId = id;
+            renderNotebookSidebarHighlight();
+            const entry = state.notebookEntries.find(e => e.id === id);
+            const contentBox = document.getElementById('notebookContent');
+            if (entry) {
+                let parsedBody = entry.body.replace(/\[REDACTED\](.*?)\[\/REDACTED\]/gi, '<span class="redacted" onclick="this.classList.add(\'revealed\')">$1</span>');
+                contentBox.innerHTML = `
+                    <div class="border-b border-arg-border/60 pb-2 mb-3">
+                        <span class="text-[10px] text-arg-yellow font-bold bg-arg-yellow/10 px-1.5 py-0.5 border border-arg-yellow/40 rounded">${entry.classification}</span>
+                        <h2 class="text-base font-bold text-arg-green mt-1">${entry.title}</h2>
+                    </div>
+                    <div>${parsedBody}</div>
+                `;
+            } else {
+                contentBox.innerHTML = `<p class="text-gray-500 italic">No entry selected.</p>`;
+            }
+        }
+
+        function renderNotebookSidebarHighlight() {
+            document.querySelectorAll('.doc-btn').forEach((btn, idx) => {
+                const entry = state.notebookEntries[idx];
+                if (entry && entry.id === activeDocId) {
+                    btn.className = 'doc-btn w-full text-left px-2 py-2 rounded font-mono-code text-xs flex items-center gap-2 text-arg-green bg-arg-green/10 border border-arg-green/30';
+                } else {
+                    btn.className = 'doc-btn w-full text-left px-2 py-2 rounded font-mono-code text-xs flex items-center gap-2 text-gray-300 hover:bg-arg-green/10';
+                }
+            });
+        }
+
+        // =================================================================
+        // FOLDER & FILE EXPLORER SYSTEM
+        // =================================================================
+        function renderDesktopAndExplorer() {
+            // Render Desktop Dynamic Items
+            const deskContainer = document.getElementById('desktopIconContainer');
+            // Remove existing dynamic items
+            document.querySelectorAll('.dynamic-desk-item').forEach(e => e.remove());
+
+            const rootItems = state.fs.filter(item => item.parent === 'root');
+            rootItems.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = "dynamic-desk-item group flex flex-col items-center justify-center p-2.5 rounded-xl hover:bg-arg-green/10 border border-transparent hover:border-arg-green/30 transition text-center";
+                btn.ondblclick = () => openFsItem(item);
+                btn.onclick = () => playSound('click');
+
+                let icon = 'fa-file';
+                let color = 'text-gray-300';
+                if (item.type === 'folder') { icon = 'fa-folder-closed'; color = 'text-arg-green'; }
+                else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
+                else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
+                else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
+
+                btn.innerHTML = `
+                    <div class="w-12 h-12 rounded-xl bg-arg-border/40 border border-arg-border flex items-center justify-center ${color} text-2xl group-hover:scale-110 transition shadow-lg">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <span class="mt-2 font-mono-code text-[11px] text-gray-200 group-hover:text-arg-green tracking-wide truncate w-24">${item.name}</span>
+                `;
+                deskContainer.appendChild(btn);
+            });
+
+            // Render Current Explorer Window Content
+            renderExplorerGrid();
+        }
+
+        function openFsItem(item) {
+            playSound('click');
+            if (item.type === 'folder') {
+                currentExplorerParent = item.id;
+                openWindow('windowExplorer');
+                renderExplorerGrid();
+            } else if (item.type === 'image') {
+                openMediaViewer('image', item.name, item.src || 'https://placehold.co/600x400/0a1f14/00ff66?text=REDACTED+IMAGE');
+            } else if (item.type === 'video') {
+                openMediaViewer('video', item.name, item.src || '');
+            } else if (item.type === 'text') {
+                openMediaViewer('text', item.name, item.src || 'No content.');
+            }
+        }
+
+        function renderExplorerGrid() {
+            const grid = document.getElementById('explorerGrid');
+            const breadcrumb = document.getElementById('explorerBreadcrumb');
+            grid.innerHTML = '';
+
+            // Update Breadcrumb
+            let path = [];
+            let curr = currentExplorerParent;
+            while (curr !== 'root') {
+                const folder = state.fs.find(f => f.id === curr);
+                if (folder) {
+                    path.unshift(folder.name);
+                    curr = folder.parent;
+                } else { break; }
+            }
+            path.unshift('Root');
+            breadcrumb.innerText = path.join(' / ');
+
+            const items = state.fs.filter(item => item.parent === currentExplorerParent);
+            if (items.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-arg-dim font-mono-code text-xs py-10">[Folder is empty]</div>`;
+                return;
+            }
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "group cursor-pointer p-3 bg-black/60 border border-arg-border hover:border-arg-green rounded-lg flex flex-col items-center justify-center transition";
+                card.ondblclick = () => openFsItem(item);
+                card.onclick = () => playSound('click');
+
+                let icon = 'fa-file';
+                let color = 'text-gray-300';
+                if (item.type === 'folder') { icon = 'fa-folder'; color = 'text-arg-green'; }
+                else if (item.type === 'image') { icon = 'fa-file-image'; color = 'text-arg-yellow'; }
+                else if (item.type === 'video') { icon = 'fa-file-video'; color = 'text-arg-cyan'; }
+                else if (item.type === 'text') { icon = 'fa-file-lines'; color = 'text-white'; }
+
+                card.innerHTML = `
+                    <div class="text-3xl ${color} mb-2 group-hover:scale-110 transition"><i class="fa-solid ${icon}"></i></div>
+                    <div class="font-mono-code text-xs text-gray-200 truncate w-full text-center">${item.name}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function navigateExplorerUp() {
+            playSound('click');
+            if (currentExplorerParent === 'root') return;
+            const currentFolder = state.fs.find(f => f.id === currentExplorerParent);
+            if (currentFolder) {
+                currentExplorerParent = currentFolder.parent;
+                renderExplorerGrid();
+            }
+        }
+
+        function promptCreateFolderInExplorer() {
+            playSound('click');
+            const name = prompt(currentLang === 'ru' ? "Введите имя новой папки:" : "Enter new folder name:", "New_Folder");
+            if (name && name.trim()) {
+                const newFolder = {
+                    id: 'f_' + Date.now(),
+                    name: name.trim().replace(/\s+/g, '_'),
+                    type: 'folder',
+                    parent: currentExplorerParent
+                };
+                state.fs.push(newFolder);
+                renderDesktopAndExplorer();
+            }
+        }
+
+        // =================================================================
+        // MEDIA VIEWER
+        // =================================================================
+        function openMediaViewer(type, title, src) {
+            playSound('click');
+            const modal = document.getElementById('mediaViewerModal');
+            document.getElementById('mediaTitle').innerText = title;
+            const container = document.getElementById('mediaContainer');
+
+            if (type === 'image') {
+                container.innerHTML = `<img src="${src}" class="max-h-[70vh] rounded border border-arg-border object-contain">`;
+            } else if (type === 'video') {
+                if (src.includes('youtube.com') || src.includes('youtu.be')) {
+                    const embedUrl = src.replace('watch?v=', 'embed/');
+                    container.innerHTML = `<iframe src="${embedUrl}" class="w-full h-80 rounded border border-arg-border" frameborder="0" allowfullscreen></iframe>`;
+                } else {
+                    container.innerHTML = `<video src="${src}" controls class="max-h-[70vh] w-full rounded border border-arg-border"></video>`;
+                }
+            } else {
+                container.innerHTML = `<pre class="font-mono-code text-xs text-arg-green leading-relaxed p-4 w-full whitespace-pre-wrap">${src}</pre>`;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeMediaViewer() {
+            playSound('click');
+            document.getElementById('mediaViewerModal').classList.add('hidden');
+        }
+
+        // =================================================================
+        // TERMINAL CLI ENGINE
+        // =================================================================
+        const termInput = document.getElementById('terminalInput');
+        const termOutput = document.getElementById('terminalOutput');
+
+        termInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = termInput.value.trim();
+                termInput.value = '';
+                processCommand(cmd);
+            }
+        });
+
+        function printTerm(text, colorClass = "text-arg-cyan/90") {
+            const line = document.createElement('div');
+            line.className = colorClass;
+            line.innerHTML = text;
+            termOutput.appendChild(line);
+            const container = document.getElementById('terminalContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function processCommand(cmd) {
+            printTerm(`<span class="text-white font-bold">vladivan@gru-laptop:~$</span> ${cmd}`);
+            const lower = cmd.toLowerCase();
+
+            if (lower === 'помощь' || lower === 'help') {
+                if (currentLang === 'ru') {
+                    printTerm(`Команды консоли:
+  <span class="text-arg-green">файлы</span> / <span class="text-arg-green">ls</span>        - Список файлов системы
+  <span class="text-arg-green">читать &lt;файл&gt;</span> / <span class="text-arg-green">cat</span> - Просмотр документа
+  <span class="text-arg-green">расшифровать</span>      - Запуск алгоритма дешифровки
+  <span class="text-arg-green">очистить</span> / <span class="text-arg-green">clear</span>    - Очистить консоль`);
+                } else {
+                    printTerm(`Terminal CLI Commands:
+  <span class="text-arg-green">ls</span> / <span class="text-arg-green">files</span>         - List directory contents
+  <span class="text-arg-green">cat &lt;file&gt;</span>       - Read document content
+  <span class="text-arg-green">decode</span>            - Run cipher decryption routine
+  <span class="text-arg-green">clear</span>             - Clear terminal screen`);
+                }
+            } else if (lower === 'файлы' || lower === 'ls' || lower === 'files') {
+                const names = state.fs.map(i => i.name).join('   ');
+                printTerm(names || 'system_audit.log   operation_zarya.txt');
+            } else if (lower.startsWith('читать ') || lower.startsWith('cat ')) {
+                printTerm(`[LOG READ] Vault Access PIN is stored in encrypted memory.`);
+            } else if (lower === 'расшифровать' || lower === 'decode') {
+                printTerm(`[DECRYPTED SUCCESS] Vault PIN: <span class="text-arg-yellow font-bold">${state.vault.pin}</span>`, "text-arg-yellow");
+            } else if (lower === 'очистить' || lower === 'clear') {
+                termOutput.innerHTML = '';
+            } else if (cmd !== '') {
+                printTerm(`Command not recognized: '${cmd}'. Type 'help' / 'помощь'.`, "text-arg-red");
+            }
+        }
+
+        // =================================================================
+        // EVIDENCE INSPECTOR
+        // =================================================================
+        function inspectEvidence(type) {
+            playSound('click');
+            const modal = document.getElementById('evidenceModal');
+            if (type === 'blueprint') {
+                document.getElementById('modalTitle').innerText = currentLang === 'ru' ? 'Схема ЗАРЯ' : 'ZARYA Blueprint';
+                document.getElementById('modalDesc').innerText = currentLang === 'ru' ? 'Тактический чертеж подземного узла связи.' : 'Tactical blueprint for underground communication hub.';
+                document.getElementById('modalGraphic').innerHTML = `<i class="fa-solid fa-map"></i>`;
+            } else {
+                document.getElementById('modalTitle').innerText = currentLang === 'ru' ? 'Спутниковый снимок' : 'Satellite Imagery';
+                document.getElementById('modalDesc').innerText = currentLang === 'ru' ? 'Разведка зоны объекта Заря.' : 'Reconnaissance scan of Zarya perimeter.';
+                document.getElementById('modalGraphic').innerHTML = `<i class="fa-solid fa-satellite-dish text-arg-green"></i>`;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeEvidenceModal() {
+            playSound('click');
+            document.getElementById('evidenceModal').classList.add('hidden');
+        }
+
+        // =================================================================
+        // VAULT KEYPAD LOGIC
+        // =================================================================
+        function pressPin(num) {
+            playSound('key');
+            if (currentPin.length < 4) {
+                currentPin += num;
+                updatePinDisplay();
+            }
+        }
+
+        function clearPin() {
+            playSound('click');
+            currentPin = "";
+            updatePinDisplay();
+        }
+
+        function updatePinDisplay() {
+            document.getElementById('pinDisplay').innerText = currentPin.padEnd(4, '-');
+        }
+
+        function submitPin() {
+            if (currentPin === state.vault.pin) {
+                playSound('granted');
+                document.getElementById('vaultLockedState').classList.add('hidden');
+                document.getElementById('vaultUnlockedState').classList.remove('hidden');
+                document.getElementById('vaultUnlockedContent').innerHTML = state.vault.unlockedContent;
+            } else {
+                playSound('denied');
+                const display = document.getElementById('pinDisplay');
+                display.innerText = "ERROR";
+                setTimeout(() => { currentPin = ""; updatePinDisplay(); }, 800);
+            }
+        }
+
+        function resetVault() {
+            playSound('click');
+            currentPin = "";
+            updatePinDisplay();
+            document.getElementById('vaultUnlockedState').classList.add('hidden');
+            document.getElementById('vaultLockedState').classList.remove('hidden');
+        }
+
+        // =================================================================
+        // DEVELOPER / STORY MODDER SUITE
+        // =================================================================
+        function openModderSuite() {
+            playSound('click');
+            const pass = prompt(currentLang === 'ru' ? "ВВЕДИТЕ ПАРОЛЬ ДОСТУПА К MODDER SUITE:" : "ENTER MODDER SUITE PASSCODE:");
+            if (pass !== MODDER_PASSCODE) {
+                playSound('denied');
+                alert(currentLang === 'ru' ? "ДОСТУП ЗАПРЕЩЕН: НЕВЕРНЫЙ ПАРОЛЬ" : "ACCESS DENIED: INVALID PASSCODE");
+                return;
+            }
+            playSound('granted');
+            populateModderSelects();
+            document.getElementById('modderSuiteModal').classList.remove('hidden');
+        }
+
+        function closeModderSuite() {
+            playSound('click');
+            document.getElementById('modderSuiteModal').classList.add('hidden');
+        }
+
+        function switchModderTab(tabId) {
+            playSound('click');
+            document.querySelectorAll('.modder-tab').forEach(b => {
+                b.classList.remove('border-arg-yellow', 'text-arg-yellow', 'font-bold');
+                b.classList.add('border-transparent', 'text-gray-300');
+            });
+            const activeBtn = document.getElementById('tabBtn' + tabId.replace('tab', ''));
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-300');
+                activeBtn.classList.add('border-arg-yellow', 'text-arg-yellow', 'font-bold');
+            }
+
+            document.getElementById('tabNotebook').classList.add('hidden');
+            document.getElementById('tabFiles').classList.add('hidden');
+            document.getElementById('tabVault').classList.add('hidden');
+            document.getElementById(tabId).classList.remove('hidden');
+        }
+
+        function populateModderSelects() {
+            // Populate Notebook Select Dropdown
+            const select = document.getElementById('modNoteSelect');
+            select.innerHTML = '';
+            state.notebookEntries.forEach((entry, idx) => {
+                const opt = document.createElement('option');
+                opt.value = entry.id;
+                opt.innerText = `${idx + 1}. ${entry.title}`;
+                select.appendChild(opt);
+            });
+            if (state.notebookEntries.length > 0) loadNotebookEntryToEdit();
+
+            // Populate Parent Folder Select Dropdown
+            const parentSelect = document.getElementById('modFileParent');
+            parentSelect.innerHTML = `<option value="root">Desktop (Root)</option>`;
+            const folders = state.fs.filter(f => f.type === 'folder');
+            folders.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.innerText = `[Folder] ${f.name}`;
+                parentSelect.appendChild(opt);
+            });
+
+            // Populate Modder File Directory List
+            renderModFileList();
+
+            // Populate Vault/Credentials Inputs
+            document.getElementById('modConfigUser').value = state.credentials.username;
+            document.getElementById('modConfigPass').value = state.credentials.password;
+            document.getElementById('modConfigVaultPin').value = state.vault.pin;
+            document.getElementById('modConfigVaultPayload').value = state.vault.unlockedContent;
+        }
+
+        // NOTEBOOK ENTRY MODDER LOGIC
+        function loadNotebookEntryToEdit() {
+            const id = document.getElementById('modNoteSelect').value;
+            const entry = state.notebookEntries.find(e => e.id === id);
+            if (entry) {
+                document.getElementById('modNoteTitle').value = entry.title;
+                document.getElementById('modNoteClass').value = entry.classification;
+                document.getElementById('modNoteBody').value = entry.body;
+            }
+        }
+
+        function saveNotebookEntryMod() {
+            playSound('click');
+            const id = document.getElementById('modNoteSelect').value;
+            const entry = state.notebookEntries.find(e => e.id === id);
+            if (entry) {
+                entry.title = document.getElementById('modNoteTitle').value;
+                entry.classification = document.getElementById('modNoteClass').value;
+                entry.body = document.getElementById('modNoteBody').value;
+                renderNotebook();
+                populateModderSelects();
+            }
+        }
+
+        function createNewNotebookEntry() {
+            playSound('click');
+            const newId = 'doc_' + Date.now();
+            const newEntry = {
+                id: newId,
+                title: 'New Log Entry',
+                classification: 'RESTRICTED',
+                body: '<p>Enter content here...</p>'
+            };
+            state.notebookEntries.push(newEntry);
+            activeDocId = newId;
+            renderNotebook();
+            populateModderSelects();
+            document.getElementById('modNoteSelect').value = newId;
+            loadNotebookEntryToEdit();
+        }
+
+        function deleteCurrentNotebookEntry() {
+            playSound('click');
+            const id = document.getElementById('modNoteSelect').value;
+            state.notebookEntries = state.notebookEntries.filter(e => e.id !== id);
+            renderNotebook();
+            populateModderSelects();
+        }
+
+        // FILES & FOLDERS MODDER LOGIC
+        function toggleFileModType() {
+            const type = document.getElementById('modFileType').value;
+            const group = document.getElementById('modFileContentGroup');
+            group.className = type === 'folder' ? 'hidden mb-3' : 'block mb-3';
+        }
+
+        function addNewCustomFileOrFolder() {
+            playSound('click');
+            const type = document.getElementById('modFileType').value;
+            const name = document.getElementById('modFileName').value.trim().replace(/\s+/g, '_') || 'Unnamed';
+            const parent = document.getElementById('modFileParent').value;
+            const src = document.getElementById('modFileSrc').value;
+
+            const newItem = {
+                id: 'item_' + Date.now(),
+                name: name,
+                type: type,
+                parent: parent,
+                src: src
+            };
+            state.fs.push(newItem);
+            document.getElementById('modFileName').value = '';
+            document.getElementById('modFileSrc').value = '';
+            renderDesktopAndExplorer();
+            populateModderSelects();
+        }
+
+        function renderModFileList() {
+            const container = document.getElementById('modFileList');
+            container.innerHTML = '';
+            if (state.fs.length === 0) {
+                container.innerHTML = `<div class="text-gray-500 italic p-2">No custom files/folders created.</div>`;
+                return;
+            }
+            state.fs.forEach(item => {
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between p-1.5 bg-black/80 rounded border border-arg-border text-xs";
+                row.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-arg-yellow font-bold">[${item.type.toUpperCase()}]</span>
+                        <span class="text-white">${item.name}</span>
+                        <span class="text-[10px] text-arg-dim">(parent: ${item.parent})</span>
+                    </div>
+                    <button onclick="deleteFsItem('${item.id}')" class="text-arg-red hover:text-white px-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function deleteFsItem(id) {
+            playSound('click');
+            state.fs = state.fs.filter(i => i.id !== id && i.parent !== id);
+            renderDesktopAndExplorer();
+            populateModderSelects();
+        }
+
+        // VAULT & CREDENTIALS MODDER LOGIC
+        function saveVaultConfigMod() {
+            playSound('click');
+            state.credentials.username = document.getElementById('modConfigUser').value.trim();
+            state.credentials.password = document.getElementById('modConfigPass').value.trim();
+            state.vault.pin = document.getElementById('modConfigVaultPin').value.trim();
+            state.vault.unlockedContent = document.getElementById('modConfigVaultPayload').value;
+            alert(currentLang === 'ru' ? "Настройки сохранены!" : "Security configuration saved!");
+        }
+
+        // SCENARIO JSON EXPORT & IMPORT
+        function exportScenarioJSON() {
+            playSound('click');
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `ZARYA84_Scenario_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importScenarioJSON(event) {
+            playSound('click');
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState.notebookEntries && importedState.credentials) {
+                        state = importedState;
+                        renderNotebook();
+                        renderDesktopAndExplorer();
+                        populateModderSelects();
+                        alert(currentLang === 'ru' ? "Сценарий успешно загружен!" : "ARG Scenario loaded successfully!");
+                    }
+                } catch (err) {
+                    alert("Invalid JSON scenario file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialization
+        applyLanguage();
+    </script>
+</body>
+</html>
