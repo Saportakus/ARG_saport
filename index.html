@@ -996,7 +996,7 @@
                     const fCard = document.createElement('div');
                     fCard.className = "p-3 rounded bg-green-950/50 border border-green-800 hover:border-green-500 cursor-pointer transition flex flex-col items-center text-center";
                     fCard.innerHTML = `
-                        <i class="fa-solid ${file.type === 'image' ? 'fa-image' : 'fa-file-lines'} text-2xl text-green-400 mb-2"></i>
+                        <i class="fa-solid ${file.type === 'image' ? 'fa-image' : file.type === 'video' ? 'fa-video' : file.type === 'audio' ? 'fa-volume-high' : 'fa-file-lines'} text-2xl text-green-400 mb-2"></i>
                         <div class="text-xs font-bold text-green-300 truncate w-full">${file.name}</div>
                         <span class="text-[10px] text-green-600 uppercase">${file.type}</span>
                     `;
@@ -1020,9 +1020,277 @@
             }
         }
 
+        function ejectFlashDisk() {
+            document.getElementById('flash-content-view').classList.add('hidden');
+            document.getElementById('flash-prompt-view').classList.remove('hidden');
+            document.getElementById('flash-code-input').value = '';
+        }
+
+        // Vault Keypad PIN handler
+        let currentVaultPin = "";
+        function pressVaultKey(digit) {
+            if (currentVaultPin.length < 4) {
+                currentVaultPin += digit;
+                document.getElementById('vault-pin-input').value = currentVaultPin;
+            }
+        }
+        function clearVaultPin() {
+            currentVaultPin = "";
+            document.getElementById('vault-pin-input').value = "";
+        }
+        function backspaceVaultPin() {
+            currentVaultPin = currentVaultPin.slice(0, -1);
+            document.getElementById('vault-pin-input').value = currentVaultPin;
+        }
+        function submitVaultPin() {
+            if (currentVaultPin === "2486") {
+                document.getElementById('vault-lock-view').classList.add('hidden');
+                document.getElementById('vault-content-view').classList.remove('hidden');
+                const badge = document.getElementById('vault-status-badge');
+                if (badge) {
+                    badge.classList.remove('bg-red-600');
+                    badge.classList.add('bg-green-500');
+                }
+                loadVaultFiles();
+            } else {
+                showModal("ОШИБКА ДОСТУПА", "Неверный секретный шифр сейфа.");
+                clearVaultPin();
+            }
+        }
+        function lockVaultAgain() {
+            clearVaultPin();
+            document.getElementById('vault-content-view').classList.add('hidden');
+            document.getElementById('vault-lock-view').classList.remove('hidden');
+            const badge = document.getElementById('vault-status-badge');
+            if (badge) {
+                badge.classList.remove('bg-green-500');
+                badge.classList.add('bg-red-600');
+            }
+            currentVaultFolder = "root";
+        }
+
+        // GM Modder App Functions
+        function verifyModderLogin() {
+            const pass = document.getElementById('modder-pass-input').value.trim();
+            if (pass === "09SAPORT05") {
+                document.getElementById('modder-auth-container').classList.add('hidden');
+                document.getElementById('modder-dashboard').classList.remove('hidden');
+                initModderLists();
+            } else {
+                showModal("GAME MASTER ERROR", "Invalid Game Master password.");
+                document.getElementById('modder-pass-input').value = "";
+            }
+        }
+
         function closeModderApp() {
             closeAppWindow('modder');
-            lockSystem();
+        }
+
+        function switchModderTab(tab) {
+            ['archive', 'vault', 'flash', 'notes', 'json'].forEach(t => {
+                const btn = document.getElementById(`m-tab-${t}`);
+                const content = document.getElementById(`m-content-${t}`);
+                if (btn && content) {
+                    if (t === tab) {
+                        btn.className = "px-3 py-2 bg-yellow-950/80 border-t border-x border-yellow-800 text-yellow-300 font-bold rounded-t";
+                        content.classList.remove('hidden');
+                    } else {
+                        btn.className = "px-3 py-2 bg-black/60 text-yellow-600 hover:text-yellow-300 rounded-t border border-transparent";
+                        content.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function initModderLists() {
+            renderGmArchiveList();
+            renderGmVaultList();
+            renderGmFlashList();
+            renderGmNotesList();
+            document.getElementById('gm-json-textarea').value = JSON.stringify(argData, null, 2);
+        }
+
+        function renderGmArchiveList() {
+            const container = document.getElementById('gm-archive-list');
+            if (!container) return;
+            container.innerHTML = '';
+            argData.archive.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
+                div.innerHTML = `<span>[${item.type}] <b>${item.title}</b> (${item.folder || 'root'})</span> <button onclick="gmDeleteArchiveItem(${idx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function gmAddArchiveItem() {
+            const title = document.getElementById('add-arch-title').value.trim();
+            const type = document.getElementById('add-arch-type').value;
+            const url = document.getElementById('add-arch-url').value.trim();
+            const desc = document.getElementById('add-arch-desc').value.trim();
+            if (!title) { showModal("GM ERROR", "Title is required"); return; }
+            argData.archive.push({ id: "media_" + Date.now(), title, type, url, desc, folder: currentArchiveFolder });
+            saveArgData();
+            document.getElementById('add-arch-title').value = '';
+            document.getElementById('add-arch-url').value = '';
+            document.getElementById('add-arch-desc').value = '';
+            renderGmArchiveList();
+            if (activeApps.has('archive')) initArchive();
+        }
+
+        function gmDeleteArchiveItem(idx) {
+            argData.archive.splice(idx, 1);
+            saveArgData();
+            renderGmArchiveList();
+            if (activeApps.has('archive')) initArchive();
+        }
+
+        function renderGmVaultList() {
+            const container = document.getElementById('gm-vault-list');
+            if (!container) return;
+            container.innerHTML = '';
+            argData.vault.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
+                div.innerHTML = `<span>[${item.type}] <b>${item.title}</b> (${item.folder || 'root'})</span> <button onclick="gmDeleteVaultItem(${idx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function gmAddVaultItem() {
+            const title = document.getElementById('add-vault-title').value.trim();
+            const type = document.getElementById('add-vault-type').value;
+            const content = document.getElementById('add-vault-content').value.trim();
+            if (!title) { showModal("GM ERROR", "Title is required"); return; }
+            argData.vault.push({ id: "vault_" + Date.now(), title, type, content, folder: currentVaultFolder });
+            saveArgData();
+            document.getElementById('add-vault-title').value = '';
+            document.getElementById('add-vault-content').value = '';
+            renderGmVaultList();
+            if (activeApps.has('vault')) loadVaultFiles();
+        }
+
+        function gmDeleteVaultItem(idx) {
+            argData.vault.splice(idx, 1);
+            saveArgData();
+            renderGmVaultList();
+            if (activeApps.has('vault')) loadVaultFiles();
+        }
+
+        function renderGmFlashList() {
+            const container = document.getElementById('gm-flash-list');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let code in argData.flashdisks) {
+                const disk = argData.flashdisks[code];
+                const div = document.createElement('div');
+                div.className = "p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs space-y-1";
+                div.innerHTML = `<div class="flex justify-between font-bold text-yellow-300"><span>Code: [${code}] - ${disk.name}</span> <button onclick="gmDeleteFlashDisk('${code}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button></div>`;
+                disk.files.forEach((f, fIdx) => {
+                    const fDiv = document.createElement('div');
+                    fDiv.className = "flex justify-between pl-4 text-yellow-200 text-[11px]";
+                    fDiv.innerHTML = `<span>- ${f.name} (${f.type})</span> <button onclick="gmDeleteFileFromFlash('${code}', ${fIdx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-xmark"></i></button>`;
+                    div.appendChild(fDiv);
+                });
+                container.appendChild(div);
+            }
+        }
+
+        function gmCreateOrUpdateFlashDisk() {
+            const code = document.getElementById('add-flash-code').value.trim().toUpperCase();
+            const name = document.getElementById('add-flash-name').value.trim();
+            if (!code || code.length !== 3) { showModal("GM ERROR", "Flash code must be exactly 3 characters."); return; }
+            if (!argData.flashdisks[code]) {
+                argData.flashdisks[code] = { name: name || "Flash Disk", files: [] };
+            } else if (name) {
+                argData.flashdisks[code].name = name;
+            }
+            saveArgData();
+            document.getElementById('add-flash-code').value = '';
+            document.getElementById('add-flash-name').value = '';
+            renderGmFlashList();
+        }
+
+        function gmAddFileToFlashDisk() {
+            const code = document.getElementById('flash-file-target-code').value.trim().toUpperCase();
+            const name = document.getElementById('flash-file-name').value.trim();
+            const type = document.getElementById('flash-file-type').value;
+            const url = document.getElementById('flash-file-url').value.trim();
+            if (!argData.flashdisks[code]) { showModal("GM ERROR", "Flash disk with code " + code + " not found!"); return; }
+            if (!name) { showModal("GM ERROR", "Filename is required"); return; }
+            argData.flashdisks[code].files.push({ name, type, url: url, content: url, desc: url });
+            saveArgData();
+            document.getElementById('flash-file-target-code').value = '';
+            document.getElementById('flash-file-name').value = '';
+            document.getElementById('flash-file-url').value = '';
+            renderGmFlashList();
+        }
+
+        function gmDeleteFlashDisk(code) {
+            delete argData.flashdisks[code];
+            saveArgData();
+            renderGmFlashList();
+        }
+
+        function gmDeleteFileFromFlash(code, fIdx) {
+            if (argData.flashdisks[code]) {
+                argData.flashdisks[code].files.splice(fIdx, 1);
+                saveArgData();
+                renderGmFlashList();
+            }
+        }
+
+        function renderGmNotesList() {
+            const container = document.getElementById('gm-notes-list');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let filename in argData.notes) {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
+                div.innerHTML = `<span><b>${filename}</b></span> <button onclick="gmDeleteNote('${filename}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
+                container.appendChild(div);
+            }
+        }
+
+        function gmAddNoteFile() {
+            const filename = document.getElementById('add-note-filename').value.trim();
+            const content = document.getElementById('add-note-content').value;
+            if (!filename) { showModal("GM ERROR", "Filename is required"); return; }
+            argData.notes[filename] = content;
+            saveArgData();
+            document.getElementById('add-note-filename').value = '';
+            document.getElementById('add-note-content').value = '';
+            renderGmNotesList();
+            if (activeApps.has('notepad')) initNotepad();
+        }
+
+        function gmDeleteNote(filename) {
+            delete argData.notes[filename];
+            saveArgData();
+            renderGmNotesList();
+            if (activeApps.has('notepad')) initNotepad();
+        }
+
+        function exportJsonState() {
+            document.getElementById('gm-json-textarea').value = JSON.stringify(argData, null, 2);
+            showModal("GM EXPORT", "ARG state successfully generated in JSON text area.");
+        }
+
+        function importJsonState() {
+            try {
+                const parsed = JSON.parse(document.getElementById('gm-json-textarea').value);
+                argData = parsed;
+                saveArgData();
+                initModderLists();
+                showModal("GM IMPORT", "ARG state successfully updated and saved across all apps!");
+            } catch(e) {
+                showModal("GM ERROR", "Invalid JSON format: " + e.message);
+            }
+        }
+
+        function initModder() {
+            document.getElementById('modder-auth-container').classList.remove('hidden');
+            document.getElementById('modder-dashboard').classList.add('hidden');
+            document.getElementById('modder-pass-input').value = '';
         }
 
         function initApps() {}
