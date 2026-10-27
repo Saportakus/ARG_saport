@@ -381,42 +381,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- APP 3: EVIDENCE -->
-                <div id="windowEvidence" class="window-instance glass-window absolute top-14 left-12 sm:left-64 w-[90%] sm:w-[620px] h-[440px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-yellow/40">
-                    <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
-                        <div class="flex items-center gap-2 text-arg-yellow font-mono-code text-xs">
-                            <i class="fa-solid fa-folder-closed"></i>
-                            <span>ФОТО-АРХИВ МАТЕРИАЛОВ</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="minimizeWindow('windowEvidence')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-solid fa-minus text-xs"></i></button>
-                            <button onclick="toggleMaximize('windowEvidence')" class="text-gray-400 hover:text-white px-1.5"><i class="fa-regular fa-square text-xs"></i></button>
-                            <button onclick="closeWindow('windowEvidence')" class="text-gray-400 hover:text-arg-red px-1.5"><i class="fa-solid fa-xmark text-sm"></i></button>
-                        </div>
-                    </div>
-                    <div class="flex-1 p-4 overflow-y-auto bg-black/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div onclick="inspectEvidence('blueprint')" class="cursor-pointer bg-black/60 border border-arg-border hover:border-arg-yellow p-3 rounded-lg transition">
-                            <div class="h-28 bg-arg-border/20 rounded flex items-center justify-center mb-2 text-4xl text-arg-yellow/70"><i class="fa-solid fa-map"></i></div>
-                            <div class="font-mono-code text-xs text-white font-bold">Схема_ЗАРЯ.RAW</div>
-                        </div>
-                        <div onclick="inspectEvidence('photo')" class="cursor-pointer bg-black/60 border border-arg-border hover:border-arg-yellow p-3 rounded-lg transition">
-                            <div class="h-28 bg-arg-border/20 rounded flex items-center justify-center mb-2 text-4xl text-arg-green/70"><i class="fa-solid fa-satellite-dish"></i></div>
-                            <div class="font-mono-code text-xs text-white font-bold">Спутник_01.PNG</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Evidence Inspection Modal -->
-                <div id="evidenceModal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md p-6 flex flex-col items-center justify-center">
-                    <div class="glass-panel max-w-md w-full p-6 rounded-xl border border-arg-yellow relative">
-                        <button onclick="closeEvidenceModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-                        <h3 id="modalTitle" class="font-mono-code text-base font-bold text-arg-yellow mb-2">Улика</h3>
-                        <div id="modalGraphic" class="w-full h-40 bg-black/80 border border-arg-border rounded-lg flex items-center justify-center mb-4 text-5xl text-arg-yellow"></div>
-                        <p id="modalDesc" class="font-mono-code text-xs text-gray-300 mb-4"></p>
-                    </div>
-                </div>
-
+                
                 <!-- APP 4: ENCRYPTED VAULT -->
                 <div id="windowVault" class="window-instance glass-window absolute top-20 left-16 sm:left-80 w-[90%] sm:w-[480px] h-[450px] rounded-xl flex flex-col hidden z-20 overflow-hidden border border-arg-red/40">
                     <div class="window-header bg-black/80 px-4 py-2 border-b border-arg-border flex items-center justify-between select-none">
