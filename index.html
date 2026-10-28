@@ -534,12 +534,8 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
-                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
-                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Content / URL / Report Text</label>
+                                <textarea id="add-vault-content" placeholder="Enter text content or link..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16 font-mono"></textarea>
                             </div>
                             <button onclick="gmAddVaultItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Vault File</button>
                         </div>
@@ -588,12 +584,8 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
-                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
-                            </div>
-                            <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
-                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Content / URL / Description</label>
+                                <input type="text" id="flash-file-url" placeholder="https://... or text content" class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
                             <button onclick="gmAddFileToFlashDisk()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add File to Flash</button>
                         </div>
@@ -1368,6 +1360,7 @@
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
                 div.innerHTML = `<span><b>${filename}</b></span> <button onclick="gmDeleteNote('${filename}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
+                container.exportJsonState;
                 container.appendChild(div);
             }
         }
