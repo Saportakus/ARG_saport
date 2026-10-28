@@ -91,6 +91,26 @@
         </div>
     </div>
 
+    <!-- Foto-Archiv Styled Standalone Viewer Modal (Used for Vault & FlashDisk) -->
+    <div id="foto-viewer-modal" class="fixed inset-0 z-[100001] bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#020b05] tactical-border-glow rounded max-w-2xl w-full h-[520px] flex flex-col p-4 relative">
+            <div class="flex items-center justify-between border-b border-green-900 pb-2 mb-3">
+                <span id="foto-modal-title" class="text-xs font-bold text-green-300 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-photo-film"></i> ПРОСМОТР ФАЙЛА
+                </span>
+                <button onclick="closeFotoViewerModal()" class="text-green-600 hover:text-red-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex-grow flex flex-col justify-between bg-black/40 border border-green-900/60 rounded p-3 overflow-hidden">
+                <div id="foto-modal-container" class="flex-grow flex items-center justify-center overflow-hidden relative border border-green-900/40 rounded bg-[#010603] p-2">
+                </div>
+                <div class="mt-3 pt-2 border-t border-green-900/60 flex justify-between items-center text-xs">
+                    <span id="foto-modal-info-title" class="text-green-400 font-bold truncate">Файл</span>
+                    <span id="foto-modal-info-type" class="text-green-600 uppercase text-[10px]">MEDIA</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== LOGIN VIEW ==================== -->
     <div id="view-login" class="flex flex-col h-full w-full justify-between p-4 z-10 relative">
         <div class="flex justify-between items-center text-xs tracking-widest text-green-500/80 uppercase border-b border-green-900/60 pb-2">
@@ -643,30 +663,50 @@
     <!-- JavaScript Application Logic -->
     <script>
         const defaultData = {
-            {
-              "notes": {},
-              "archive": [],
-              "vault": [],
-              "flashdisks": {
-                "FD2": {
-                  "name": "Полевая флеш-карта 2",
-                  "files": []
-                }
-              },
-              "folders": {
-                "archive": {
-                  "root": [
-                    "Новая папка"
-                  ]
+            folders: {
+                archive: { root: ["Снимки_Разведки", "Перехваты"] },
+                vault: { root: ["Секретные_Приказы"] }
+            },
+            notes: {
+                "report_01.log": "ОПЕРАТИВНАЯ СВОДКА №41\nСектор: Арди, Южное направление.\nПодразделения противника замечены в районе квадрата 048-2.\nОбнаружены замаскированные позиции ПВО и передвижные радары.\nТребуется корректировка артиллерийского огня.",
+                "commander_memo.txt": "ИНСТРУКЦИЯ ДЛЯ ОФИЦЕРОВ:\n1. Все доклады шифровать по стандарту ГОСТ Р 34.12.\n2. При угрозе захвата терминала немедленно очистить кэш и извлечь флеш-накопитель."
+            },
+            archive: [
+                {
+                    id: "media_1",
+                    title: "Радарная разведка (Сектор 7)",
+                    type: "image",
+                    url: "https://placehold.co/600x400/021408/22c55e?text=RADAR+SCAN+SECTOR+7",
+                    desc: "Снимок воздушной обстановки с поста наблюдения АРМ-Москва.",
+                    folder: "Снимки_Разведки"
                 },
-                "vault": {
-                  "root": []
-                },
-                "flash": {
-                  "root": []
+                {
+                    id: "media_2",
+                    title: "Перехваченное аудиосообщение",
+                    type: "audio",
+                    url: "https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg",
+                    desc: "Аудиозапись радиоперехвата частоты противника.",
+                    folder: "Перехваты"
                 }
-              }
-            };
+            ],
+            vault: [
+                {
+                    id: "vault_1",
+                    title: "План Операции",
+                    type: "text",
+                    content: "СОВЕРШЕННО СЕКРЕТНО.\nНачало операции: 04:00 по московскому времени.",
+                    folder: "Секретные_Приказы"
+                }
+            ],
+            flashdisks: {
+                "SEC": {
+                    name: "Сектор 'Альфа'",
+                    files: [
+                        { name: "recon_map.png", type: "image", url: "https://placehold.co/600x400/021a0a/4ade80?text=ALPHA+RECON+MAP", desc: "Спутниковый снимок." }
+                    ]
+                }
+            }
+        };
 
         let argData = JSON.parse(localStorage.getItem('arm_arg_data')) || defaultData;
         if (!argData.folders) argData.folders = defaultData.folders;
@@ -732,6 +772,27 @@
         }
         function closeModal() {
             document.getElementById('sys-modal').classList.add('hidden');
+        }
+
+        // Standalone Foto-Archiv Styled Viewer Modal for Vault and FlashDisk
+        function openFotoViewerModal(item) {
+            const titleEl = document.getElementById('foto-modal-info-title');
+            const typeEl = document.getElementById('foto-modal-info-type');
+            const modalTitleEl = document.getElementById('foto-modal-title');
+            const container = document.getElementById('foto-modal-container');
+
+            modalTitleEl.innerHTML = `<i class="fa-solid fa-photo-film"></i> ПРОСМОТР: ${item.title || item.name || 'ФАЙЛ'}`;
+            titleEl.innerText = item.title || item.name || 'Файл';
+            typeEl.innerText = item.type || 'media';
+            container.innerHTML = '';
+
+            renderMediaIntoContainer(container, item);
+            document.getElementById('foto-viewer-modal').classList.remove('hidden');
+        }
+
+        function closeFotoViewerModal() {
+            document.getElementById('foto-viewer-modal').classList.add('hidden');
+            document.getElementById('foto-modal-container').innerHTML = '';
         }
 
         const activeApps = new Set();
@@ -930,27 +991,13 @@
                         <div class="text-[10px] text-green-600 uppercase">${item.type}</div>
                     </div>
                 `;
-                div.onclick = () => openMediaInArchive(item);
+                div.onclick = () => displayMediaItem(item);
                 listContainer.appendChild(div);
             });
         }
 
-        // Dedicated helper to launch media items via Photo/Video Archive viewer
-        function openMediaInArchive(item) {
-            openApp('archive');
-            displayMediaItem(item);
-        }
-
-        // Helper function for embedding media directly
-        function displayMediaItem(item) {
-            const viewerContainer = document.getElementById('media-viewer-container');
-            const titleEl = document.getElementById('media-info-title');
-            const typeEl = document.getElementById('media-info-type');
-
-            titleEl.innerText = item.title || item.name || "Медиафайл";
-            typeEl.innerText = item.type || "file";
-            viewerContainer.innerHTML = '';
-
+        // Shared helper for embedding media across Archive, Vault, and FlashDisk
+        function renderMediaIntoContainer(container, item) {
             const url = item.url || item.content || '';
             const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
 
@@ -958,9 +1005,9 @@
                 const img = document.createElement('img');
                 img.src = url || 'https://placehold.co/600x400/021408/22c55e?text=IMAGE+PREVIEW';
                 img.className = 'max-w-full max-h-full object-contain rounded border border-green-800 cursor-pointer';
-                img.onclick = () => showModal(item.title || item.name || "Изображение", item.desc || item.content || "Изображение из архива.");
+                img.onclick = () => showModal(item.title || item.name || "Просмотр", item.desc || item.content || "Изображение из архива.");
                 img.onerror = () => { img.src = 'https://placehold.co/600x400/021408/ef4444?text=IMAGE+LOAD+ERROR'; };
-                viewerContainer.appendChild(img);
+                container.appendChild(img);
             } else if (item.type === 'video') {
                 if (isYoutube) {
                     let embedUrl = url;
@@ -973,7 +1020,7 @@
                     iframe.src = embedUrl;
                     iframe.className = 'w-full h-full rounded border border-green-800';
                     iframe.setAttribute('allowfullscreen', 'true');
-                    viewerContainer.appendChild(iframe);
+                    container.appendChild(iframe);
                 } else {
                     const video = document.createElement('video');
                     video.src = url;
@@ -981,9 +1028,9 @@
                     video.autoplay = false;
                     video.className = 'max-w-full max-h-full rounded border border-green-800';
                     video.onerror = () => {
-                        viewerContainer.innerHTML = `<div class="text-center text-red-400 text-xs p-4"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>Ошибка воспроизведения видео: Ссылка не поддерживается.<br><span class="text-[10px] text-green-600 font-mono select-all">${url}</span></div>`;
+                        container.innerHTML = `<div class="text-center text-red-400 text-xs p-4"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>Ошибка воспроизведения видео: Ссылка не поддерживается.<br><span class="text-[10px] text-green-600 font-mono select-all">${url}</span></div>`;
                     };
-                    viewerContainer.appendChild(video);
+                    container.appendChild(video);
                 }
             } else if (item.type === 'audio') {
                 const audioBox = document.createElement('div');
@@ -993,13 +1040,25 @@
                     <div class="text-xs text-green-300 text-center">${item.desc || item.content || 'Аудиозапись разблокирована'}</div>
                     <audio controls class="w-full max-w-xs mt-2" src="${url}"></audio>
                 `;
-                viewerContainer.appendChild(audioBox);
+                container.appendChild(audioBox);
             } else {
                 const docBox = document.createElement('div');
                 docBox.className = "p-4 text-xs text-green-300 font-mono whitespace-pre-wrap overflow-y-auto w-full h-full border border-green-900/60 rounded bg-[#010804]";
                 docBox.innerText = item.content || item.desc || "Документ архива.";
-                viewerContainer.appendChild(docBox);
+                container.appendChild(docBox);
             }
+        }
+
+        function displayMediaItem(item) {
+            const viewerContainer = document.getElementById('media-viewer-container');
+            const titleEl = document.getElementById('media-info-title');
+            const typeEl = document.getElementById('media-info-type');
+
+            titleEl.innerText = item.title;
+            typeEl.innerText = item.type;
+            viewerContainer.innerHTML = '';
+
+            renderMediaIntoContainer(viewerContainer, item);
         }
 
         function createFolderPrompt(appTarget) {
@@ -1035,27 +1094,18 @@
                 const card = document.createElement('div');
                 card.className = "p-3 rounded bg-green-950/40 border border-green-800 hover:border-green-500 cursor-pointer transition flex flex-col justify-between items-center text-center";
                 
-                let icon = "fa-file-shield text-green-400";
-                if (item.type === 'image') icon = "fa-image text-green-400";
-                if (item.type === 'video') icon = "fa-video text-blue-400";
-                if (item.type === 'audio') icon = "fa-volume-high text-yellow-400";
+                let iconClass = "fa-file-shield text-green-400";
+                if (item.type === 'image') iconClass = "fa-image text-green-400";
+                if (item.type === 'video') iconClass = "fa-video text-blue-400";
+                if (item.type === 'audio') iconClass = "fa-volume-high text-yellow-400";
 
                 card.innerHTML = `
-                    <i class="fa-solid ${icon} text-2xl mb-2"></i>
+                    <i class="fa-solid ${iconClass} text-2xl mb-2"></i>
                     <div class="text-xs font-bold text-green-300 mb-1 truncate w-full">${item.title}</div>
-                    <span class="text-[10px] text-green-600 uppercase">${item.type || 'Секретно'}</span>
+                    <span class="text-[10px] text-green-600 uppercase">Секретно (${item.type || 'text'})</span>
                 `;
                 card.onclick = () => {
-                    if (item.type === 'image' || item.type === 'video' || item.type === 'audio') {
-                        openMediaInArchive({
-                            title: item.title,
-                            type: item.type,
-                            url: item.content || item.url,
-                            desc: item.desc || item.content
-                        });
-                    } else {
-                        showModal(item.title, item.content || item.desc || "Секретный объект.");
-                    }
+                    openFotoViewerModal(item);
                 };
                 grid.appendChild(card);
             });
@@ -1088,16 +1138,7 @@
                         <span class="text-[10px] text-green-600 uppercase">${file.type}</span>
                     `;
                     fCard.onclick = () => {
-                        if (file.type === 'image' || file.type === 'video' || file.type === 'audio') {
-                            openMediaInArchive({
-                                title: file.name,
-                                type: file.type,
-                                url: file.url || file.content,
-                                desc: file.desc || file.content
-                            });
-                        } else {
-                            showModal(file.name, file.content || file.desc || file.url || "Содержимое файла.");
-                        }
+                        openFotoViewerModal(file);
                     };
                     filesContainer.appendChild(fCard);
                 });
@@ -1251,7 +1292,7 @@
             const folder = document.getElementById('add-arch-folder').value;
             const url = document.getElementById('add-arch-url').value.trim();
             const desc = document.getElementById('add-arch-desc').value.trim();
-            if (!title) { showModal("GM ERROR", "Title is required"); return; }
+            if (!title) { return; }
             if (!argData.archive) argData.archive = [];
             argData.archive.push({ id: "media_" + Date.now(), title, type, url, desc, folder: folder || "root" });
             saveArgData();
@@ -1293,7 +1334,6 @@
             const content = contentInput ? contentInput.value.trim() : "";
 
             if (!title) { 
-                showModal("GM ERROR", "Vault File Title is required"); 
                 return; 
             }
 
@@ -1344,7 +1384,7 @@
         function gmCreateOrUpdateFlashDisk() {
             const code = document.getElementById('add-flash-code').value.trim().toUpperCase();
             const name = document.getElementById('add-flash-name').value.trim();
-            if (!code || code.length !== 3) { showModal("GM ERROR", "Flash code must be exactly 3 characters."); return; }
+            if (!code || code.length !== 3) { return; }
             if (!argData.flashdisks) argData.flashdisks = {};
             if (!argData.flashdisks[code]) {
                 argData.flashdisks[code] = { name: name || `Disk (${code})`, files: [] };
@@ -1355,7 +1395,6 @@
             document.getElementById('add-flash-code').value = '';
             document.getElementById('add-flash-name').value = '';
             renderGmFlashList();
-            showModal("GM SUCCESS", `FlashDisk [${code}] initialized/updated successfully.`);
         }
 
         function gmAddFileToFlashDisk() {
@@ -1369,13 +1408,8 @@
             const type = typeInput ? typeInput.value : "text";
             const url = urlInput ? urlInput.value.trim() : "";
 
-            if (!code || code.length !== 3) {
-                showModal("GM ERROR", "Target Flash Code must be a 3-letter code.");
+            if (!code || code.length !== 3 || !name) {
                 return;
-            }
-            if (!name) { 
-                showModal("GM ERROR", "Filename is required."); 
-                return; 
             }
 
             if (!argData.flashdisks) argData.flashdisks = {};
@@ -1427,7 +1461,7 @@
         function gmAddNoteFile() {
             const filename = document.getElementById('add-note-filename').value.trim();
             const content = document.getElementById('add-note-content').value;
-            if (!filename) { showModal("GM ERROR", "Filename is required"); return; }
+            if (!filename) { return; }
             if (!argData.notes) argData.notes = {};
             argData.notes[filename] = content;
             saveArgData();
@@ -1446,7 +1480,6 @@
 
         function exportJsonState() {
             document.getElementById('gm-json-textarea').value = JSON.stringify(argData, null, 2);
-            showModal("GM EXPORT", "ARG state successfully generated in JSON text area.");
         }
 
         function importJsonState() {
@@ -1457,7 +1490,6 @@
                 saveArgData();
                 populateModderFolderDropdowns();
                 initModderLists();
-                showModal("GM IMPORT", "ARG state successfully updated and saved across all apps!");
             } catch(e) {
                 showModal("GM ERROR", "Invalid JSON format: " + e.message);
             }
