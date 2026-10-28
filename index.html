@@ -689,9 +689,9 @@
         };
 
         let argData = JSON.parse(localStorage.getItem('arm_arg_data')) || defaultData;
-        if (!argData.folders) {
-            argData.folders = defaultData.folders;
-        }
+        if (!argData.folders) argData.folders = defaultData.folders;
+        if (!argData.vault) argData.vault = [];
+        if (!argData.flashdisks) argData.flashdisks = {};
 
         function saveArgData() {
             localStorage.setItem('arm_arg_data', JSON.stringify(argData));
@@ -950,9 +950,15 @@
                         <div class="text-[10px] text-green-600 uppercase">${item.type}</div>
                     </div>
                 `;
-                div.onclick = () => displayMediaItem(item);
+                div.onclick = () => openMediaInArchive(item);
                 listContainer.appendChild(div);
             });
+        }
+
+        // Dedicated helper to launch media items via Photo/Video Archive viewer
+        function openMediaInArchive(item) {
+            openApp('archive');
+            displayMediaItem(item);
         }
 
         // Helper function for embedding media directly
@@ -961,8 +967,8 @@
             const titleEl = document.getElementById('media-info-title');
             const typeEl = document.getElementById('media-info-type');
 
-            titleEl.innerText = item.title;
-            typeEl.innerText = item.type;
+            titleEl.innerText = item.title || item.name || "Медиафайл";
+            typeEl.innerText = item.type || "file";
             viewerContainer.innerHTML = '';
 
             const url = item.url || item.content || '';
@@ -972,7 +978,7 @@
                 const img = document.createElement('img');
                 img.src = url || 'https://placehold.co/600x400/021408/22c55e?text=IMAGE+PREVIEW';
                 img.className = 'max-w-full max-h-full object-contain rounded border border-green-800 cursor-pointer';
-                img.onclick = () => showModal(item.title, item.desc || "Изображение из архива.");
+                img.onclick = () => showModal(item.title || item.name || "Изображение", item.desc || item.content || "Изображение из архива.");
                 img.onerror = () => { img.src = 'https://placehold.co/600x400/021408/ef4444?text=IMAGE+LOAD+ERROR'; };
                 viewerContainer.appendChild(img);
             } else if (item.type === 'video') {
@@ -1004,7 +1010,7 @@
                 audioBox.className = "flex flex-col items-center justify-center p-4 gap-3 w-full";
                 audioBox.innerHTML = `
                     <i class="fa-solid fa-file-audio text-4xl text-yellow-400 animate-pulse"></i>
-                    <div class="text-xs text-green-300 text-center">${item.desc || 'Аудиозапись разблокирована'}</div>
+                    <div class="text-xs text-green-300 text-center">${item.desc || item.content || 'Аудиозапись разблокирована'}</div>
                     <audio controls class="w-full max-w-xs mt-2" src="${url}"></audio>
                 `;
                 viewerContainer.appendChild(audioBox);
@@ -1030,6 +1036,7 @@
         }
 
         // Vault
+        function initVault() {}
         let currentVaultFolder = "root";
         function loadVaultFiles() {
             const grid = document.getElementById('vault-files-grid');
@@ -1047,26 +1054,42 @@
             argData.vault.filter(item => (item.folder || "root") === currentVaultFolder).forEach(item => {
                 const card = document.createElement('div');
                 card.className = "p-3 rounded bg-green-950/40 border border-green-800 hover:border-green-500 cursor-pointer transition flex flex-col justify-between items-center text-center";
+                
+                let icon = "fa-file-shield text-green-400";
+                if (item.type === 'image') icon = "fa-image text-green-400";
+                if (item.type === 'video') icon = "fa-video text-blue-400";
+                if (item.type === 'audio') icon = "fa-volume-high text-yellow-400";
+
                 card.innerHTML = `
-                    <i class="fa-solid fa-file-shield text-2xl text-green-400 mb-2"></i>
-                    <div class="text-xs font-bold text-green-300 mb-1">${item.title}</div>
-                    <span class="text-[10px] text-green-600 uppercase">Секретно</span>
+                    <i class="fa-solid ${icon} text-2xl mb-2"></i>
+                    <div class="text-xs font-bold text-green-300 mb-1 truncate w-full">${item.title}</div>
+                    <span class="text-[10px] text-green-600 uppercase">${item.type || 'Секретно'}</span>
                 `;
                 card.onclick = () => {
-                    showModal(item.title, item.content || item.desc || "Секретный объект.");
+                    if (item.type === 'image' || item.type === 'video' || item.type === 'audio') {
+                        openMediaInArchive({
+                            title: item.title,
+                            type: item.type,
+                            url: item.content || item.url,
+                            desc: item.desc || item.content
+                        });
+                    } else {
+                        showModal(item.title, item.content || item.desc || "Секретный объект.");
+                    }
                 };
                 grid.appendChild(card);
             });
         }
 
         // FlashDisk
+        function initFlash() {}
         function readFlashDisk() {
             const codeInput = document.getElementById('flash-code-input').value.trim().toUpperCase();
             const errorMsg = document.getElementById('flash-error-msg');
             const iconContainer = document.getElementById('flash-icon-container');
             const mainIcon = document.getElementById('flash-main-icon');
 
-            if (argData.flashdisks[codeInput]) {
+            if (argData.flashdisks && argData.flashdisks[codeInput]) {
                 errorMsg.classList.add('hidden');
                 document.getElementById('flash-prompt-view').classList.add('hidden');
                 document.getElementById('flash-content-view').classList.remove('hidden');
@@ -1076,16 +1099,25 @@
                 
                 const filesContainer = document.getElementById('flash-files-container');
                 filesContainer.innerHTML = '';
-                disk.files.forEach(file => {
+                (disk.files || []).forEach(file => {
                     const fCard = document.createElement('div');
                     fCard.className = "p-3 rounded bg-green-950/50 border border-green-800 hover:border-green-500 cursor-pointer transition flex flex-col items-center text-center";
                     fCard.innerHTML = `
-                        <i class="fa-solid ${file.type === 'image' ? 'fa-image' : file.type === 'video' ? 'fa-video' : file.type === 'audio' ? 'fa-volume-high' : 'fa-file-lines'} text-2xl text-green-400 mb-2"></i>
+                        <i class="fa-solid ${file.type === 'image' ? 'fa-image text-green-400' : file.type === 'video' ? 'fa-video text-blue-400' : file.type === 'audio' ? 'fa-volume-high text-yellow-400' : 'fa-file-lines text-green-400'} text-2xl mb-2"></i>
                         <div class="text-xs font-bold text-green-300 truncate w-full">${file.name}</div>
                         <span class="text-[10px] text-green-600 uppercase">${file.type}</span>
                     `;
                     fCard.onclick = () => {
-                        showModal(file.name, file.content || file.desc || "Содержимое файла.");
+                        if (file.type === 'image' || file.type === 'video' || file.type === 'audio') {
+                            openMediaInArchive({
+                                title: file.name,
+                                type: file.type,
+                                url: file.url || file.content,
+                                desc: file.desc || file.content
+                            });
+                        } else {
+                            showModal(file.name, file.content || file.desc || file.url || "Содержимое файла.");
+                        }
                     };
                     filesContainer.appendChild(fCard);
                 });
@@ -1225,7 +1257,7 @@
             const container = document.getElementById('gm-archive-list');
             if (!container) return;
             container.innerHTML = '';
-            argData.archive.forEach((item, idx) => {
+            (argData.archive || []).forEach((item, idx) => {
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
                 div.innerHTML = `<span>[${item.type}] <b>${item.title}</b> (Folder: /${item.folder || 'root'})</span> <button onclick="gmDeleteArchiveItem(${idx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
@@ -1240,6 +1272,7 @@
             const url = document.getElementById('add-arch-url').value.trim();
             const desc = document.getElementById('add-arch-desc').value.trim();
             if (!title) { showModal("GM ERROR", "Title is required"); return; }
+            if (!argData.archive) argData.archive = [];
             argData.archive.push({ id: "media_" + Date.now(), title, type, url, desc, folder: folder || "root" });
             saveArgData();
             document.getElementById('add-arch-title').value = '';
@@ -1260,7 +1293,7 @@
             const container = document.getElementById('gm-vault-list');
             if (!container) return;
             container.innerHTML = '';
-            argData.vault.forEach((item, idx) => {
+            (argData.vault || []).forEach((item, idx) => {
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
                 div.innerHTML = `<span>[${item.type}] <b>${item.title}</b> (Folder: /${item.folder || 'root'})</span> <button onclick="gmDeleteVaultItem(${idx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
@@ -1269,15 +1302,34 @@
         }
 
         function gmAddVaultItem() {
-            const title = document.getElementById('add-vault-title').value.trim();
-            const type = document.getElementById('add-vault-type').value;
-            const folder = document.getElementById('add-vault-folder').value;
-            const content = document.getElementById('add-vault-content').value.trim();
-            if (!title) { showModal("GM ERROR", "Title is required"); return; }
-            argData.vault.push({ id: "vault_" + Date.now(), title, type, content, folder: folder || "root" });
+            const titleInput = document.getElementById('add-vault-title');
+            const typeInput = document.getElementById('add-vault-type');
+            const folderInput = document.getElementById('add-vault-folder');
+            const contentInput = document.getElementById('add-vault-content');
+
+            const title = titleInput ? titleInput.value.trim() : "";
+            const type = typeInput ? typeInput.value : "text";
+            const folder = folderInput ? folderInput.value : "root";
+            const content = contentInput ? contentInput.value.trim() : "";
+
+            if (!title) { 
+                showModal("GM ERROR", "Vault File Title is required"); 
+                return; 
+            }
+
+            if (!argData.vault) argData.vault = [];
+            argData.vault.push({ 
+                id: "vault_" + Date.now(), 
+                title: title, 
+                type: type, 
+                content: content, 
+                desc: content, 
+                folder: folder || "root" 
+            });
+
             saveArgData();
-            document.getElementById('add-vault-title').value = '';
-            document.getElementById('add-vault-content').value = '';
+            if (titleInput) titleInput.value = '';
+            if (contentInput) contentInput.value = '';
             renderGmVaultList();
             if (activeApps.has('vault')) loadVaultFiles();
         }
@@ -1293,12 +1345,13 @@
             const container = document.getElementById('gm-flash-list');
             if (!container) return;
             container.innerHTML = '';
+            if (!argData.flashdisks) argData.flashdisks = {};
             for (let code in argData.flashdisks) {
                 const disk = argData.flashdisks[code];
                 const div = document.createElement('div');
                 div.className = "p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs space-y-1";
-                div.innerHTML = `<div class="flex justify-between font-bold text-yellow-300"><span>Code: [${code}] - ${disk.name}</span> <button onclick="gmDeleteFlashDisk('${code}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button></div>`;
-                disk.files.forEach((f, fIdx) => {
+                div.innerHTML = `<div class="flex justify-between font-bold text-yellow-300"><span>Code: [${code}] - ${disk.name || 'Unnamed FlashDisk'}</span> <button onclick="gmDeleteFlashDisk('${code}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button></div>`;
+                (disk.files || []).forEach((f, fIdx) => {
                     const fDiv = document.createElement('div');
                     fDiv.className = "flex justify-between pl-4 text-yellow-200 text-[11px]";
                     fDiv.innerHTML = `<span>- ${f.name} (${f.type})</span> <button onclick="gmDeleteFileFromFlash('${code}', ${fIdx})" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-xmark"></i></button>`;
@@ -1312,8 +1365,9 @@
             const code = document.getElementById('add-flash-code').value.trim().toUpperCase();
             const name = document.getElementById('add-flash-name').value.trim();
             if (!code || code.length !== 3) { showModal("GM ERROR", "Flash code must be exactly 3 characters."); return; }
+            if (!argData.flashdisks) argData.flashdisks = {};
             if (!argData.flashdisks[code]) {
-                argData.flashdisks[code] = { name: name || "Flash Disk", files: [] };
+                argData.flashdisks[code] = { name: name || `Disk (${code})`, files: [] };
             } else if (name) {
                 argData.flashdisks[code].name = name;
             }
@@ -1321,20 +1375,46 @@
             document.getElementById('add-flash-code').value = '';
             document.getElementById('add-flash-name').value = '';
             renderGmFlashList();
+            showModal("GM SUCCESS", `FlashDisk [${code}] initialized/updated successfully.`);
         }
 
         function gmAddFileToFlashDisk() {
-            const code = document.getElementById('flash-file-target-code').value.trim().toUpperCase();
-            const name = document.getElementById('flash-file-name').value.trim();
-            const type = document.getElementById('flash-file-type').value;
-            const url = document.getElementById('flash-file-url').value.trim();
-            if (!argData.flashdisks[code]) { showModal("GM ERROR", "Flash disk with code " + code + " not found!"); return; }
-            if (!name) { showModal("GM ERROR", "Filename is required"); return; }
-            argData.flashdisks[code].files.push({ name, type, url: url, content: url, desc: url });
+            const codeInput = document.getElementById('flash-file-target-code');
+            const nameInput = document.getElementById('flash-file-name');
+            const typeInput = document.getElementById('flash-file-type');
+            const urlInput = document.getElementById('flash-file-url');
+
+            const code = codeInput ? codeInput.value.trim().toUpperCase() : "";
+            const name = nameInput ? nameInput.value.trim() : "";
+            const type = typeInput ? typeInput.value : "text";
+            const url = urlInput ? urlInput.value.trim() : "";
+
+            if (!code || code.length !== 3) {
+                showModal("GM ERROR", "Target Flash Code must be a 3-letter code.");
+                return;
+            }
+            if (!name) { 
+                showModal("GM ERROR", "Filename is required."); 
+                return; 
+            }
+
+            if (!argData.flashdisks) argData.flashdisks = {};
+            if (!argData.flashdisks[code]) {
+                argData.flashdisks[code] = { name: `Disk (${code})`, files: [] };
+            }
+
+            argData.flashdisks[code].files.push({ 
+                name: name, 
+                type: type, 
+                url: url, 
+                content: url, 
+                desc: url 
+            });
+
             saveArgData();
-            document.getElementById('flash-file-target-code').value = '';
-            document.getElementById('flash-file-name').value = '';
-            document.getElementById('flash-file-url').value = '';
+            if (codeInput) codeInput.value = '';
+            if (nameInput) nameInput.value = '';
+            if (urlInput) urlInput.value = '';
             renderGmFlashList();
         }
 
@@ -1345,7 +1425,7 @@
         }
 
         function gmDeleteFileFromFlash(code, fIdx) {
-            if (argData.flashdisks[code]) {
+            if (argData.flashdisks && argData.flashdisks[code]) {
                 argData.flashdisks[code].files.splice(fIdx, 1);
                 saveArgData();
                 renderGmFlashList();
@@ -1360,7 +1440,6 @@
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center p-2 bg-yellow-950/10 border border-yellow-900/40 rounded text-xs";
                 div.innerHTML = `<span><b>${filename}</b></span> <button onclick="gmDeleteNote('${filename}')" class="text-red-400 hover:text-red-200"><i class="fa-solid fa-trash"></i></button>`;
-                container.exportJsonState;
                 container.appendChild(div);
             }
         }
@@ -1369,6 +1448,7 @@
             const filename = document.getElementById('add-note-filename').value.trim();
             const content = document.getElementById('add-note-content').value;
             if (!filename) { showModal("GM ERROR", "Filename is required"); return; }
+            if (!argData.notes) argData.notes = {};
             argData.notes[filename] = content;
             saveArgData();
             document.getElementById('add-note-filename').value = '';
