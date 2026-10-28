@@ -59,62 +59,9 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #22c55e;
         }
-
-        /* Tactical Animations */
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(1000%); }
-        }
-        .boot-scan {
-            animation: scanline 2.5s linear infinite;
-        }
-
-        @keyframes glitch-fade {
-            0% { opacity: 0; transform: scale(0.98); filter: brightness(2) contrast(1.5); }
-            50% { opacity: 0.8; transform: scale(1.01); filter: brightness(1.2); }
-            100% { opacity: 1; transform: scale(1); filter: brightness(1); }
-        }
-        .animate-login-enter {
-            animation: glitch-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        @keyframes glitch-exit {
-            0% { opacity: 1; transform: scale(1); filter: brightness(1); }
-            50% { opacity: 0.5; transform: scale(1.02); filter: brightness(2) opacity(0.7); }
-            100% { opacity: 0; transform: scale(0.95); filter: brightness(0); }
-        }
-        .animate-logout-exit {
-            animation: glitch-exit 0.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-        }
     </style>
 </head>
 <body class="crt h-screen w-screen flex flex-col justify-between relative bg-[#020604]">
-
-    <!-- ==================== SYSTEM BOOT SCREEN OVERLAY ==================== -->
-    <div id="boot-screen" class="fixed inset-0 z-[200000] bg-[#020604] flex flex-col justify-between p-8 font-mono text-green-500 overflow-hidden">
-        <div class="relative z-10 space-y-1 text-xs">
-            <div class="flex justify-between border-b border-green-900/80 pb-2 mb-4 text-green-400">
-                <span>МО РФ АРМ-14МП BIOS v4.02.19</span>
-                <span>ГОСТ Р 34.12-2015</span>
-            </div>
-            <div id="boot-log" class="space-y-1">
-                <div>[0.000102] INITIALIZING TACTICAL HARDWARE BUS...</div>
-            </div>
-        </div>
-
-        <div class="relative z-10 border-t border-green-900/80 pt-4">
-            <div class="flex justify-between items-center text-xs mb-1">
-                <span id="boot-status-text" class="text-green-400 font-bold uppercase">ЗАГРУЗКА ЯДРА СИСТЕМЫ...</span>
-                <span id="boot-progress-percent" class="text-green-500">0%</span>
-            </div>
-            <div class="w-full bg-green-950/60 h-2 rounded border border-green-800/80 overflow-hidden">
-                <div id="boot-progress-bar" class="bg-green-500 h-full w-0 transition-all duration-100 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></div>
-            </div>
-        </div>
-
-        <!-- Scan line visual during boot -->
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent h-20 w-full pointer-events-none boot-scan"></div>
-    </div>
 
     <!-- Background Radar Sweep Effect -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-25 z-0">
@@ -222,8 +169,8 @@
                         </div>
                     </div>
 
-                    <button type="submit" id="login-submit-btn" class="w-full mt-2 py-2.5 px-4 bg-green-950 hover:bg-green-900 border border-green-600 text-green-300 font-bold rounded tracking-widest text-sm transition shadow-[0_0_10px_rgba(34,197,94,0.2)] flex items-center justify-center gap-2 uppercase">
-                        <i class="fa-solid fa-right-to-bracket"></i> <span id="login-btn-text">ВХОД В СИСТЕМУ</span>
+                    <button type="submit" class="w-full mt-2 py-2.5 px-4 bg-green-950 hover:bg-green-900 border border-green-600 text-green-300 font-bold rounded tracking-widest text-sm transition shadow-[0_0_10px_rgba(34,197,94,0.2)] flex items-center justify-center gap-2 uppercase">
+                        <i class="fa-solid fa-right-to-bracket"></i> ВХОД В СИСТЕМУ
                     </button>
                 </form>
 
@@ -715,159 +662,86 @@
 
     <!-- JavaScript Application Logic -->
     <script>
-        // System Boot Sequence Animation
-        window.addEventListener('DOMContentLoaded', () => {
-            runBootSequence();
-        });
+        const defaultData = {
+  "folders": {
+    "archive": {
+      "root": [
+        "Снимки_Разведки",
+        "Перехваты"
+      ]
+    },
+    "vault": {
+      "root": [
+        "Секретные_Приказы"
+      ]
+    }
+  },
+  "notes": {},
+  "archive": [],
+  "vault": [],
+  "flashdisks": {
+    "FF2": {
+      "name": "Полевая флеш-карта 2",
+      "files": []
+    }
+  }
+};
 
-        function runBootSequence() {
-            const bootLog = document.getElementById('boot-log');
-            const progressBar = document.getElementById('boot-progress-bar');
-            const percentText = document.getElementById('boot-progress-percent');
-            const statusText = document.getElementById('boot-status-text');
-            const bootScreen = document.getElementById('boot-screen');
+        let argData = JSON.parse(localStorage.getItem('arm_arg_data')) || defaultData;
+        if (!argData.folders) argData.folders = defaultData.folders;
+        if (!argData.vault) argData.vault = [];
+        if (!argData.flashdisks) argData.flashdisks = {};
 
-            const logMessages = [
-                "[0.000214] MEMORY CHECK: 64GB ECC REGISTERED RAM OK",
-                "[0.001048] LOADING ENCRYPTED VFS (GOST R 34.12-2015)...",
-                "[0.002810] INITIALIZING SECURE HARDWARE SECURITY MODULE (HSM)...",
-                "[0.004112] MOUNTING LOCAL STORAGE BLOCKS...",
-                "[0.006940] CONNECTING TO MILITARY NETWORK NODE ARM-MOSCOW...",
-                "[0.010402] VERIFYING GRU AFRF DIGITAL SIGNATURES...",
-                "[0.012891] ALL SYSTEMS OPERATIONAL. LAUNCHING TERMINAL UI..."
-            ];
-
-            let step = 0;
-            let progress = 0;
-
-            const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 10;
-                if (progress > 100) progress = 100;
-
-                progressBar.style.width = progress + '%';
-                percentText.innerText = progress + '%';
-
-                if (step < logMessages.length) {
-                    const logLine = document.createElement('div');
-                    logLine.innerText = logMessages[step];
-                    bootLog.appendChild(logLine);
-                    step++;
-                }
-
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    statusText.innerText = "ГОТОВО к РАБОТЕ. ЗАПУСК...";
-                    setTimeout(() => {
-                        bootScreen.classList.add('animate-logout-exit');
-                        setTimeout(() => {
-                            bootScreen.style.display = 'none';
-                        }, 500);
-                    }, 400);
-                }
-            }, 180);
+        function saveArgData() {
+            localStorage.setItem('arm_arg_data', JSON.stringify(argData));
         }
 
-        const defaultData = {
-            folders: {
-                archive: { root: ["Снимки_Разведки", "Перехваты"] },
-                vault: { root: ["Секретные_Приказы"] }
-            },
-            notes: {
-                "report_01.log": "ОПЕРАТИВНАЯ СВОДКА №41\nСектор: Арди, Южное направление.\nПодразделения противника замечены в районе квадрата 048-2.\nОбнаружены замаскированные позиции ПВО и передвижные радары.\nТребуется корректировка артиллерийского огня.",
-                "commander_memo.txt": "ИНСТРУКЦИЯ ДЛЯ ОФИЦЕРОВ:\n1. Все доклады шифровать по стандарту ГОСТ Р 34.12.\n2. При угрозе захвата терминала немедленно очистить кэш и извлечь флеш-накопитель."
-            },
-            archive: [
-                {
-                    id: "media_1",
-                    title: "Радарная разведка (Сектор 7)",
-                    type: "image",
-                    url: "https://placehold.co/600x400/021408/22c55e?text=RADAR+SCAN+SECTOR+7",
-                    desc: "Снимок воздушной обстановки с поста наблюдения АРМ-Москва.",
-                    folder: "Снимки_Разведки"
-                },
-                {
-                    id: "media_2",
-                    title: "Перехваченное аудиосообщение",
-                    type: "audio",
-                    url: "https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg",
-                    desc: "Аудиозапись радиоперехвата частоты противника.",
-                    folder: "Перехваты"
-                }
-            ],
-            vault: [
-                {
-                    id: "vault_1",
-                    title: "План Операции",
-                    type: "text",
-                    content: "СОВЕРШЕННО СЕКРЕТНО.\nНачало операции: 04:00 по московскому времени.",
-                    folder: "Секретные_Приказы"
-                }
-            ],
-            flashdisks: {
-                "SEC": {
-                    name: "Сектор 'Альфа'",
-                    files: [
-                        { name: "recon_map.png", type: "image", url: "https://placehold.co/600x400/021a0a/4ade80?text=ALPHA+RECON+MAP", desc: "Спутниковый снимок." }
-        // Login Handler with Transition Animations
+        function updateClocks() {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            const moscowTimeEl = document.getElementById('moscow-clock');
+            if (moscowTimeEl) moscowTimeEl.innerText = timeString;
+            const desktopClockEl = document.getElementById('desktop-clock');
+            if (desktopClockEl) desktopClockEl.innerText = timeString + " MSK";
+        }
+        setInterval(updateClocks, 1000);
+        updateClocks();
+
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('password-input');
+            const icon = document.getElementById('pass-toggle-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Login Handler
         function handleLogin(event) {
             event.preventDefault();
             const user = document.getElementById('username-input').value.trim();
             const pass = document.getElementById('password-input').value.trim();
 
             if (user === "AFRF_FL5" && pass === "KASTET09") {
-                const btn = document.getElementById('login-submit-btn');
-                const btnText = document.getElementById('login-btn-text');
-                btn.disabled = true;
-                btnText.innerText = "ПРОВЕРКА И ДОСТУП...";
-
-                // Login glitch fade animation transition
-                setTimeout(() => {
-                    const loginView = document.getElementById('view-login');
-                    const desktopView = document.getElementById('view-desktop');
-                    
-                    loginView.classList.add('animate-logout-exit');
-                    
-                    setTimeout(() => {
-                        loginView.classList.add('hidden');
-                        loginView.classList.remove('animate-logout-exit');
-                        desktopView.classList.remove('hidden');
-                        desktopView.classList.add('animate-login-enter');
-                        
-                        btn.disabled = false;
-                        btnText.innerText = "ВХОД В СИСТЕМУ";
-                        initApps();
-
-                        setTimeout(() => {
-                            desktopView.classList.remove('animate-login-enter');
-                        }, 600);
-                    }, 450);
-                }, 400);
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('view-desktop').classList.remove('hidden');
+                initApps();
             } else {
                 showModal("ОШИБКА АВТОРИЗАЦИИ", "Неверное имя пользователя или пароль.");
             }
         }
 
         function lockSystem() {
-            const desktopView = document.getElementById('view-desktop');
-            const loginView = document.getElementById('view-login');
-
-            desktopView.classList.add('animate-logout-exit');
-
-            setTimeout(() => {
-                desktopView.classList.add('hidden');
-                desktopView.classList.remove('animate-logout-exit');
-                
-                loginView.classList.remove('hidden');
-                loginView.classList.add('animate-login-enter');
-
-                document.getElementById('username-input').value = '';
-                document.getElementById('password-input').value = '';
-                ['notepad', 'archive', 'vault', 'flash', 'modder'].forEach(app => closeAppWindow(app));
-
-                setTimeout(() => {
-                    loginView.classList.remove('animate-login-enter');
-                }, 600);
-            }, 450);
+            document.getElementById('view-desktop').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+            document.getElementById('username-input').value = '';
+            document.getElementById('password-input').value = '';
+            ['notepad', 'archive', 'vault', 'flash', 'modder'].forEach(app => closeAppWindow(app));
         }
 
         function showModal(title, text) {
