@@ -91,73 +91,6 @@
         </div>
     </div>
 
-    <!-- Upload Media Dialog Modal -->
-    <div id="upload-modal" class="fixed inset-0 z-[100000] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-[#041108] tactical-border-glow p-6 rounded max-w-lg w-full relative">
-            <div class="flex items-center justify-between mb-4 border-b border-green-800 pb-2">
-                <span id="upload-modal-title" class="text-green-400 font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up text-green-400"></i> ЗАГРУЗКА ФАЙЛА В СИСТЕМУ
-                </span>
-                <button onclick="closeUploadModal()" class="text-green-600 hover:text-green-400"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <form id="upload-form" onsubmit="handleUniversalUpload(event)" class="space-y-4">
-                <input type="hidden" id="upload-target-app" value="archive">
-                
-                <div>
-                    <label id="upload-title-label" class="block text-xs uppercase tracking-wider text-green-500 mb-1">Название файла / Название объекта:</label>
-                    <input type="text" id="upload-file-title" required placeholder="Пример: Спутниковый снимок #04" class="w-full tactical-input text-xs px-3 py-2 rounded">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs uppercase tracking-wider text-green-500 mb-1">Тип файла:</label>
-                        <select id="upload-file-type" onchange="toggleUploadTypeFields()" class="w-full tactical-input text-xs px-3 py-2 rounded">
-                            <option value="image">Изображение (PNG, JPG, SVG)</option>
-                            <option value="video">Видео (MP4, WebM, YouTube)</option>
-                            <option value="audio">Аудио (MP3, WAV, OGG)</option>
-                            <option value="text">Текстовый документ / Лог</option>
-                        </select>
-                    </div>
-                    <div id="upload-folder-group">
-                        <label class="block text-xs uppercase tracking-wider text-green-500 mb-1">Целевая папка:</label>
-                        <select id="upload-target-folder" class="w-full tactical-input text-xs px-3 py-2 rounded">
-                            <option value="root">/ (Корневой каталог)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs uppercase tracking-wider text-green-500 mb-1">Прямая ссылка (Direct Link / URL) или локальный файл:</label>
-                    <div class="mb-2">
-                        <input type="text" id="upload-file-url" placeholder="Вставьте ПРЯМУЮ ССЫЛКУ / URL (http://... или YouTube)" class="w-full tactical-input text-xs px-3 py-2 rounded font-mono">
-                    </div>
-                    <div class="flex gap-2 items-center">
-                        <label class="px-3 py-1.5 bg-green-950 hover:bg-green-900 border border-green-600 text-green-300 rounded text-xs cursor-pointer transition uppercase flex items-center gap-2">
-                            <i class="fa-solid fa-file-arrow-up"></i> Выбрать файл с ПК
-                            <input type="file" id="upload-file-input" class="hidden" onchange="handleFileSelect(this)">
-                        </label>
-                        <span id="upload-filename-display" class="text-xs text-green-600 font-mono truncate max-w-[240px]">Файл не выбран</span>
-                    </div>
-                </div>
-
-                <div id="upload-desc-group">
-                    <label id="upload-desc-label" class="block text-xs uppercase tracking-wider text-green-500 mb-1">Описание / Оперописание / Текст:</label>
-                    <textarea id="upload-file-desc" placeholder="Дополнительная информация или содержимое документа..." class="w-full tactical-input text-xs p-2 rounded h-16"></textarea>
-                </div>
-
-                <div class="flex justify-end gap-3 border-t border-green-900/60 pt-3">
-                    <button type="button" onclick="closeUploadModal()" class="px-4 py-1.5 bg-green-950/60 hover:bg-green-900 border border-green-800 text-green-500 rounded text-xs uppercase">
-                        Отмена
-                    </button>
-                    <button type="submit" class="px-4 py-1.5 bg-green-900 hover:bg-green-800 border border-green-500 text-green-200 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> Загрузить в терминал
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- ==================== LOGIN VIEW ==================== -->
     <div id="view-login" class="flex flex-col h-full w-full justify-between p-4 z-10 relative">
         <div class="flex justify-between items-center text-xs tracking-widest text-green-500/80 uppercase border-b border-green-900/60 pb-2">
@@ -373,13 +306,10 @@
         </div>
 
         <!-- 2. PHOTO / VIDEO ARCHIVE WINDOW -->
-        <div id="app-archive" class="window absolute top-16 left-24 w-[760px] h-[520px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
+        <div id="app-archive" class="window absolute top-16 left-24 w-[720px] h-[500px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
             <div class="window-header bg-green-950/80 px-3 py-2 border-b border-green-900 flex justify-between items-center cursor-move">
                 <span class="text-xs font-bold text-green-300 uppercase flex items-center gap-2"><i class="fa-solid fa-photo-film"></i> Фото/Видео Архив (Media Archive)</span>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="openUploadModal('archive')" class="px-2 py-0.5 bg-green-900/80 hover:bg-green-800 border border-green-600 text-green-200 rounded text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 mr-2">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Загрузить медиа
-                    </button>
                     <button onclick="minimizeApp('archive')" class="text-green-600 hover:text-green-300 px-1"><i class="fa-solid fa-minus text-xs"></i></button>
                     <button onclick="closeAppWindow('archive')" class="text-green-600 hover:text-red-400 px-1"><i class="fa-solid fa-xmark text-xs"></i></button>
                 </div>
@@ -401,7 +331,7 @@
         </div>
 
         <!-- 3. VAULT & ENCRYPTED FOLDER WINDOW -->
-        <div id="app-vault" class="window absolute top-20 left-36 w-[660px] h-[480px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
+        <div id="app-vault" class="window absolute top-20 left-36 w-[640px] h-[460px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
             <div class="window-header bg-green-950/80 px-3 py-2 border-b border-green-900 flex justify-between items-center cursor-move">
                 <span class="text-xs font-bold text-green-300 uppercase flex items-center gap-2"><i class="fa-solid fa-vault"></i> Сейф и Защищенная папка (Vault & Encrypted)</span>
                 <div class="flex items-center gap-1.5">
@@ -446,14 +376,9 @@
                         <span class="text-xs text-green-400 font-bold uppercase flex items-center gap-2">
                             <i class="fa-solid fa-unlock text-green-500"></i> СЕКРЕТНЫЙ РАЗДЕЛ РАЗВЕДКИ РАЗБЛОКИРОВАН
                         </span>
-                        <div class="flex gap-2">
-                            <button onclick="openUploadModal('vault')" class="px-2.5 py-1 bg-green-900/80 hover:bg-green-800 border border-green-600 text-green-200 rounded text-xs font-bold transition uppercase flex items-center gap-1">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> + Добавить секретный файл
-                            </button>
-                            <button onclick="lockVaultAgain()" class="px-3 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs transition uppercase">
-                                <i class="fa-solid fa-lock mr-1"></i> Закрыть сейф
-                            </button>
-                        </div>
+                        <button onclick="lockVaultAgain()" class="px-3 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-300 rounded text-xs transition uppercase">
+                            <i class="fa-solid fa-lock mr-1"></i> Закрыть сейф
+                        </button>
                     </div>
                     <div id="vault-files-grid" class="grid grid-cols-3 gap-4 overflow-y-auto flex-grow p-2"></div>
                 </div>
@@ -461,7 +386,7 @@
         </div>
 
         <!-- 4. FLASHDISK READER WINDOW -->
-        <div id="app-flash" class="window absolute top-24 left-48 w-[620px] h-[460px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
+        <div id="app-flash" class="window absolute top-24 left-48 w-[600px] h-[440px] bg-[#020b05] tactical-border rounded shadow-2xl flex flex-col pointer-events-auto hidden">
             <div class="window-header bg-green-950/80 px-3 py-2 border-b border-green-900 flex justify-between items-center cursor-move">
                 <span class="text-xs font-bold text-green-300 uppercase flex items-center gap-2"><i class="fa-solid fa-usb"></i> Считыватель Флэш-накопителей</span>
                 <div class="flex items-center gap-1.5">
@@ -493,25 +418,20 @@
                         <span id="flash-loaded-title" class="text-xs text-green-400 font-bold uppercase flex items-center gap-2">
                             <i class="fa-solid fa-circle-check text-green-500"></i> НОСИТЕЛЬ СЧИТАН УСПЕШНО
                         </span>
-                        <div class="flex gap-2">
-                            <button onclick="openUploadModal('flash')" class="px-2.5 py-1 bg-green-900/80 hover:bg-green-800 border border-green-600 text-green-200 rounded text-xs font-bold transition uppercase flex items-center gap-1">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> + Загрузить на флешку
-                            </button>
-                            <button onclick="ejectFlashDisk()" class="px-3 py-1 bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 rounded text-xs transition uppercase">
-                                <i class="fa-solid fa-eject mr-1"></i> Извлечь диск
-                            </button>
-                        </div>
+                        <button onclick="ejectFlashDisk()" class="px-3 py-1 bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 rounded text-xs transition uppercase">
+                            <i class="fa-solid fa-eject mr-1"></i> Извлечь диск
+                        </button>
                     </div>
                     <div id="flash-files-container" class="grid grid-cols-3 gap-3 overflow-y-auto flex-grow p-2"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 6. GM MODDER APP (ENGLISH LANGUAGE WITH JSON EXPORT/IMPORT & MEDIA UPLOAD) -->
-        <div id="app-modder" class="window absolute top-10 left-10 w-[840px] h-[600px] bg-[#041108] tactical-border-glow rounded shadow-2xl flex flex-col pointer-events-auto hidden z-50">
+        <!-- 6. GM MODDER APP (ENGLISH LANGUAGE WITH JSON EXPORT/IMPORT) -->
+        <div id="app-modder" class="window absolute top-10 left-10 w-[820px] h-[580px] bg-[#041108] tactical-border-glow rounded shadow-2xl flex flex-col pointer-events-auto hidden z-50">
             <div class="window-header bg-yellow-950/80 px-3 py-2 border-b border-yellow-800/80 flex justify-between items-center cursor-move">
                 <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fa-solid fa-terminal"></i> [ADMIN / GM] ARG CONTENT MODDER APP (WITH MEDIA UPLOADER)
+                    <i class="fa-solid fa-terminal"></i> [ADMIN / GM] ARG CONTENT MODDER APP (ENGLISH INTERFACE)
                 </span>
                 <div class="flex items-center gap-1.5">
                     <button onclick="minimizeApp('modder')" class="text-yellow-600 hover:text-yellow-300 px-1"><i class="fa-solid fa-minus text-xs"></i></button>
@@ -573,14 +493,7 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Media File / Direct Link (YouTube, MP4, PNG, JPG, WebM, Audio)</label>
-                                <div class="flex gap-2 items-center mb-1">
-                                    <label class="px-3 py-1 bg-yellow-950 hover:bg-yellow-900 border border-yellow-700 text-yellow-300 rounded text-xs cursor-pointer uppercase">
-                                        Choose File
-                                        <input type="file" id="gm-arch-file-input" class="hidden" onchange="handleGmFileSelect(this, 'add-arch-url')">
-                                    </label>
-                                    <span id="gm-arch-file-name" class="text-[10px] text-yellow-600 font-mono truncate max-w-[200px]">No local file selected</span>
-                                </div>
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
                                 <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
                             <div class="mb-3">
@@ -621,21 +534,18 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">File Upload or Text / URL Content</label>
-                                <div class="flex gap-2 items-center mb-1">
-                                    <label class="px-3 py-1 bg-yellow-950 hover:bg-yellow-900 border border-yellow-700 text-yellow-300 rounded text-xs cursor-pointer uppercase">
-                                        Choose File
-                                        <input type="file" id="gm-vault-file-input" class="hidden" onchange="handleGmFileSelect(this, 'add-vault-content')">
-                                    </label>
-                                    <span id="gm-vault-file-name" class="text-[10px] text-yellow-600 font-mono truncate max-w-[200px]">No local file selected</span>
-                                </div>
-                                <textarea id="add-vault-content" placeholder="https://... or text description" class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16 font-mono"></textarea>
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
+                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
-                            <button onclick="gmAddVaultItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Vault File</button>
+                            <div class="mb-3">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
+                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                            </div>
+                            <button onclick="gmAddArchiveItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Media Item</button>
                         </div>
                         <div>
-                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Vault Files</h4>
-                            <div id="gm-vault-list" class="space-y-2"></div>
+                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Items</h4>
+                            <div id="gm-archive-list" class="space-y-2"></div>
                         </div>
                     </div>
 
@@ -678,22 +588,18 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL or File Content</label>
-                                <div class="flex gap-2 items-center mb-1">
-                                    <label class="px-3 py-1 bg-yellow-950 hover:bg-yellow-900 border border-yellow-700 text-yellow-300 rounded text-xs cursor-pointer uppercase">
-                                        Choose File
-                                        <input type="file" id="gm-flash-file-input" class="hidden" onchange="handleGmFileSelect(this, 'flash-file-url')">
-                                    </label>
-                                    <span id="gm-flash-file-name" class="text-[10px] text-yellow-600 font-mono truncate max-w-[200px]">No local file selected</span>
-                                </div>
-                                <input type="text" id="flash-file-url" placeholder="https://... or text content" class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
+                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
-                            <button onclick="gmAddFileToFlashDisk()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add File to Flash</button>
+                            <div class="mb-3">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
+                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                            </div>
+                            <button onclick="gmAddArchiveItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Media Item</button>
                         </div>
-
                         <div>
-                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Configured Flash Disks</h4>
-                            <div id="gm-flash-list" class="space-y-2"></div>
+                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Items</h4>
+                            <div id="gm-archive-list" class="space-y-2"></div>
                         </div>
                     </div>
 
@@ -856,171 +762,6 @@
             document.getElementById('sys-modal').classList.add('hidden');
         }
 
-        // Universal Upload Modal functions
-        let currentUploadFileBase64 = null;
-
-        function openUploadModal(targetApp = 'archive') {
-            document.getElementById('upload-target-app').value = targetApp;
-            document.getElementById('upload-file-title').value = '';
-            document.getElementById('upload-file-url').value = '';
-            document.getElementById('upload-file-desc').value = '';
-            document.getElementById('upload-filename-display').innerText = 'Файл не выбран';
-            document.getElementById('upload-file-input').value = '';
-            currentUploadFileBase64 = null;
-
-            const modalTitle = document.getElementById('upload-modal-title');
-            const folderGroup = document.getElementById('upload-folder-group');
-            const targetFolderSelect = document.getElementById('upload-target-folder');
-            targetFolderSelect.innerHTML = '<option value="root">/ (Корневой каталог)</option>';
-
-            if (targetApp === 'archive') {
-                modalTitle.innerHTML = `<i class="fa-solid fa-cloud-arrow-up text-green-400"></i> ЗАГРУЗКА В ФОТО-АРХИВ`;
-                folderGroup.classList.remove('hidden');
-                const folders = argData.folders?.archive?.root || [];
-                folders.forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.innerText = f;
-                    targetFolderSelect.appendChild(opt);
-                });
-            } else if (targetApp === 'vault') {
-                modalTitle.innerHTML = `<i class="fa-solid fa-vault text-red-400"></i> ЗАГРУЗКА В СЕКРЕТНЫЙ СЕЙФ`;
-                folderGroup.classList.remove('hidden');
-                const folders = argData.folders?.vault?.root || [];
-                folders.forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.innerText = f;
-                    targetFolderSelect.appendChild(opt);
-                });
-            } else if (targetApp === 'flash') {
-                const activeCode = document.getElementById('flash-code-input').value.trim().toUpperCase() || 'SEC';
-                modalTitle.innerHTML = `<i class="fa-solid fa-usb text-blue-400"></i> ЗАГРУЗКА НА ФЛЕШ-НАКОПИТЕЛЬ [${activeCode}]`;
-                folderGroup.classList.add('hidden');
-            }
-
-            document.getElementById('upload-modal').classList.remove('hidden');
-        }
-
-        function closeUploadModal() {
-            document.getElementById('upload-modal').classList.add('hidden');
-        }
-
-        function handleFileSelect(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                document.getElementById('upload-filename-display').innerText = file.name;
-                
-                // Auto fill title if empty
-                if (!document.getElementById('upload-file-title').value) {
-                    document.getElementById('upload-file-title').value = file.name;
-                }
-
-                // Detect type automatically
-                const typeSelect = document.getElementById('upload-file-type');
-                if (file.type.startsWith('image/')) typeSelect.value = 'image';
-                else if (file.type.startsWith('video/')) typeSelect.value = 'video';
-                else if (file.type.startsWith('audio/')) typeSelect.value = 'audio';
-                else typeSelect.value = 'text';
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentUploadFileBase64 = e.target.result;
-                };
-                if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.log')) {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsDataURL(file);
-                }
-            }
-        }
-
-        function toggleUploadTypeFields() {
-            // Placeholder for future field toggles if needed
-        }
-
-        function handleUniversalUpload(e) {
-            e.preventDefault();
-            const targetApp = document.getElementById('upload-target-app').value;
-            const title = document.getElementById('upload-file-title').value.trim();
-            const type = document.getElementById('upload-file-type').value;
-            const folder = document.getElementById('upload-target-folder').value;
-            const urlInput = document.getElementById('upload-file-url').value.trim();
-            const desc = document.getElementById('upload-file-desc').value.trim();
-
-            const finalContent = currentUploadFileBase64 || urlInput;
-
-            if (!title) {
-                showModal("ОШИБКА ЗАГРУЗКИ", "Необходимо указать название файла!");
-                return;
-            }
-
-            if (!finalContent) {
-                showModal("ОШИБКА ЗАГРУЗКИ", "Выберите файл на устройстве или укажите URL ссылку!");
-                return;
-            }
-
-            const newId = "media_" + Date.now();
-
-            if (targetApp === 'archive') {
-                argData.archive.push({
-                    id: newId,
-                    title: title,
-                    type: type,
-                    url: finalContent,
-                    content: type === 'text' ? finalContent : '',
-                    desc: desc,
-                    folder: folder || "root"
-                });
-                saveArgData();
-                initArchive();
-            } else if (targetApp === 'vault') {
-                argData.vault.push({
-                    id: "vault_" + Date.now(),
-                    title: title,
-                    type: type,
-                    url: finalContent,
-                    content: finalContent,
-                    desc: desc,
-                    folder: folder || "root"
-                });
-                saveArgData();
-                loadVaultFiles();
-            } else if (targetApp === 'flash') {
-                const codeInput = document.getElementById('flash-code-input').value.trim().toUpperCase() || "SEC";
-                if (!argData.flashdisks[codeInput]) {
-                    argData.flashdisks[codeInput] = { name: "Новый накопитель (" + codeInput + ")", files: [] };
-                }
-                argData.flashdisks[codeInput].files.push({
-                    name: title,
-                    type: type,
-                    url: finalContent,
-                    content: finalContent,
-                    desc: desc
-                });
-                saveArgData();
-                readFlashDisk();
-            }
-
-            closeUploadModal();
-            showModal("УСПЕШНАЯ ЗАГРУЗКА", `Файл "${title}" успешно загружен и сохранен в системе.`);
-        }
-
-        function handleGmFileSelect(input, targetInputId) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById(targetInputId).value = e.target.result;
-                };
-                if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.log')) {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsDataURL(file);
-                }
-            }
-        }
-
         const activeApps = new Set();
 
         function openApp(appId) {
@@ -1178,7 +919,7 @@
             topBar.className = "flex justify-between items-center mb-2 pb-2 border-b border-green-900/60";
             topBar.innerHTML = `
                 <span class="text-[10px] text-green-500 uppercase">PATH: /${currentArchiveFolder}</span>
-                <button onclick="createFolderPrompt('archive')" class="px-2 py-1 bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 rounded text-[10px] uppercase">+ Папка</button>
+                <button onclick="createFolderPrompt('archive')" class="px-2 py-1 bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 rounded text-[10px] uppercase">+ Folder</button>
             `;
             listContainer.appendChild(topBar);
 
@@ -1262,7 +1003,7 @@
                     video.autoplay = false;
                     video.className = 'max-w-full max-h-full rounded border border-green-800';
                     video.onerror = () => {
-                        viewerContainer.innerHTML = `<div class="text-center text-red-400 text-xs p-4"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>Ошибка воспроизведения видео.<br><span class="text-[10px] text-green-600 font-mono select-all">${url.slice(0, 100)}...</span></div>`;
+                        viewerContainer.innerHTML = `<div class="text-center text-red-400 text-xs p-4"><i class="fa-solid fa-triangle-exclamation text-2xl mb-2"></i><br>Ошибка воспроизведения видео: Ссылка не поддерживается.<br><span class="text-[10px] text-green-600 font-mono select-all">${url}</span></div>`;
                     };
                     viewerContainer.appendChild(video);
                 }
@@ -1297,8 +1038,6 @@
         }
 
         // Vault
-        function initVault() {}
-
         let currentVaultFolder = "root";
         function loadVaultFiles() {
             const grid = document.getElementById('vault-files-grid');
@@ -1318,11 +1057,10 @@
                 card.className = "p-3 rounded bg-green-950/40 border border-green-800 hover:border-green-500 cursor-pointer transition flex flex-col justify-between items-center text-center";
                 card.innerHTML = `
                     <i class="fa-solid fa-file-shield text-2xl text-green-400 mb-2"></i>
-                    <div class="text-xs font-bold text-green-300 mb-1 truncate w-full">${item.title}</div>
-                    <span class="text-[10px] text-green-600 uppercase">${item.type || 'Секретно'}</span>
+                    <div class="text-xs font-bold text-green-300 mb-1">${item.title}</div>
+                    <span class="text-[10px] text-green-600 uppercase">Секретно</span>
                 `;
                 card.onclick = () => {
-                    displayMediaItem(item);
                     showModal(item.title, item.content || item.desc || "Секретный объект.");
                 };
                 grid.appendChild(card);
@@ -1330,8 +1068,6 @@
         }
 
         // FlashDisk
-        function initFlash() {}
-
         function readFlashDisk() {
             const codeInput = document.getElementById('flash-code-input').value.trim().toUpperCase();
             const errorMsg = document.getElementById('flash-error-msg');
