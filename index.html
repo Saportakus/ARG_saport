@@ -534,14 +534,18 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL (for image/video/audio) or Text Content</label>
-                                <textarea id="add-vault-content" placeholder="https://... or text description" class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16 font-mono"></textarea>
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
+                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
-                            <button onclick="gmAddVaultItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Vault File</button>
+                            <div class="mb-3">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
+                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                            </div>
+                            <button onclick="gmAddArchiveItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Media Item</button>
                         </div>
                         <div>
-                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Vault Files</h4>
-                            <div id="gm-vault-list" class="space-y-2"></div>
+                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Items</h4>
+                            <div id="gm-archive-list" class="space-y-2"></div>
                         </div>
                     </div>
 
@@ -584,15 +588,18 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL or Content</label>
-                                <input type="text" id="flash-file-url" placeholder="https://... or text content" class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">URL / Direct Link (YouTube, MP4, PNG, JPG, WebM)</label>
+                                <input type="text" id="add-arch-url" placeholder="https://..." class="w-full tactical-input text-xs px-2 py-1.5 rounded border-yellow-800 text-yellow-300 font-mono">
                             </div>
-                            <button onclick="gmAddFileToFlashDisk()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add File to Flash</button>
+                            <div class="mb-3">
+                                <label class="block text-[10px] text-yellow-500 uppercase mb-1">Description / Notes</label>
+                                <textarea id="add-arch-desc" placeholder="Description..." class="w-full tactical-input text-xs p-2 rounded border-yellow-800 text-yellow-300 h-16"></textarea>
+                            </div>
+                            <button onclick="gmAddArchiveItem()" class="px-4 py-1.5 bg-yellow-950 hover:bg-yellow-900 border border-yellow-600 text-yellow-300 font-bold rounded uppercase transition">+ Add Media Item</button>
                         </div>
-
                         <div>
-                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Configured Flash Disks</h4>
-                            <div id="gm-flash-list" class="space-y-2"></div>
+                            <h4 class="font-bold text-yellow-300 mb-2 uppercase">Existing Items</h4>
+                            <div id="gm-archive-list" class="space-y-2"></div>
                         </div>
                     </div>
 
