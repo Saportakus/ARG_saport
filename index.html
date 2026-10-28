@@ -663,50 +663,29 @@
     <!-- JavaScript Application Logic -->
     <script>
         const defaultData = {
-            folders: {
-                archive: { root: ["Снимки_Разведки", "Перехваты"] },
-                vault: { root: ["Секретные_Приказы"] }
-            },
-            notes: {
-                "report_01.log": "ОПЕРАТИВНАЯ СВОДКА №41\nСектор: Арди, Южное направление.\nПодразделения противника замечены в районе квадрата 048-2.\nОбнаружены замаскированные позиции ПВО и передвижные радары.\nТребуется корректировка артиллерийского огня.",
-                "commander_memo.txt": "ИНСТРУКЦИЯ ДЛЯ ОФИЦЕРОВ:\n1. Все доклады шифровать по стандарту ГОСТ Р 34.12.\n2. При угрозе захвата терминала немедленно очистить кэш и извлечь флеш-накопитель."
-            },
-            archive: [
-                {
-                    id: "media_1",
-                    title: "Радарная разведка (Сектор 7)",
-                    type: "image",
-                    url: "https://placehold.co/600x400/021408/22c55e?text=RADAR+SCAN+SECTOR+7",
-                    desc: "Снимок воздушной обстановки с поста наблюдения АРМ-Москва.",
-                    folder: "Снимки_Разведки"
-                },
-                {
-                    id: "media_2",
-                    title: "Перехваченное аудиосообщение",
-                    type: "audio",
-                    url: "https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg",
-                    desc: "Аудиозапись радиоперехвата частоты противника.",
-                    folder: "Перехваты"
-                }
-            ],
-            vault: [
-                {
-                    id: "vault_1",
-                    title: "План Операции",
-                    type: "text",
-                    content: "СОВЕРШЕННО СЕКРЕТНО.\nНачало операции: 04:00 по московскому времени.",
-                    folder: "Секретные_Приказы"
-                }
-            ],
-            flashdisks: {
-                "SEC": {
-                    name: "Сектор 'Альфа'",
-                    files: [
-                        { name: "recon_map.png", type: "image", url: "https://placehold.co/600x400/021a0a/4ade80?text=ALPHA+RECON+MAP", desc: "Спутниковый снимок." }
-                    ]
-                }
-            }
-        };
+  "folders": {
+    "archive": {
+      "root": [
+        "Снимки_Разведки",
+        "Перехваты"
+      ]
+    },
+    "vault": {
+      "root": [
+        "Секретные_Приказы"
+      ]
+    }
+  },
+  "notes": {},
+  "archive": [],
+  "vault": [],
+  "flashdisks": {
+    "FF2": {
+      "name": "Полевая флеш-карта 2",
+      "files": []
+    }
+  }
+};
 
         let argData = JSON.parse(localStorage.getItem('arm_arg_data')) || defaultData;
         if (!argData.folders) argData.folders = defaultData.folders;
